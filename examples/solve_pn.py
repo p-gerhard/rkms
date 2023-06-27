@@ -143,7 +143,7 @@ if __name__ == "__main__":
     else:
         m = P5D3()
         m.cl_inject_vals = cl_model_inject_val
-        filename = "./meshes/h8_unit_cube_nx100_ny100_nz100.msh"
+        filename = "./meshes/unit_cube_nx100_ny100_nz100.msh"
 
     simu = Simulation(
         model=m,
