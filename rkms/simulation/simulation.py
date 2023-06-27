@@ -98,13 +98,13 @@ class Simulation:
         self.overwrite = overwrite
 
         # Setup output directory
-        sub_dir = time.strftime("run_%Y%m%d_%H_%M_%S")
+        sub_dir = time.strftime("run_%Y%m%d_%H%M%S")
         if output_dir is None:
             base_dir = os.path.abspath(os.getcwd())
         else:
             base_dir = os.path.abspath(output_dir)
 
-        self.output_dir = os.join(base_dir, sub_dir)
+        self.output_dir = os.path.join(base_dir, sub_dir)
 
         if not os.path.exists(self.output_dir):
             os.makedirs(self.output_dir)
