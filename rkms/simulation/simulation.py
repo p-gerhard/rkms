@@ -98,10 +98,13 @@ class Simulation:
         self.overwrite = overwrite
 
         # Setup output directory
+        sub_dir = time.strftime("run_%Y%m%d_%H_%M_%S")
         if output_dir is None:
-            self.output_dir = os.path.abspath(os.getcwd())
+            base_dir = os.path.abspath(os.getcwd())
         else:
-            self.output_dir = os.path.abspath(output_dir)
+            base_dir = os.path.abspath(output_dir)
+
+        self.output_dir = os.join(base_dir, sub_dir)
 
         if not os.path.exists(self.output_dir):
             os.makedirs(self.output_dir)
@@ -291,7 +294,6 @@ class Simulation:
             }
 
             cl.enqueue_copy(self.ocl_queue, self.wn_host, self.wn_dev.data).wait()
-
 
         xdmf_writer.write_data(self.t, cell_data=cd)
 

@@ -49,10 +49,8 @@ To use this project on your host system, follow these steps:
 Gmsh is an open-source mesh generation software that allows you to create meshes
 for various applications. Follow these steps to create a mesh using Gmsh:
 
-1. **Install Gmsh:** If you haven't already, download and install Gmsh from the
-   [official Gmsh website](http://gmsh.info/). Follow the installation
-   instructions provided for your operating system. In a cluster environment,
-   load the appropriate environment module to make Gmsh package available.
+1. **Install Gmsh:** You must have the [gmsh](http://gmsh.info/) package
+   installed on your to follow the instructions below.
 
 2. **Create/edit a geometry file:** In order to build meshes, two basic Gmsh geometry
    (`.geo`) files are provided in the `/data/geo` directory:
@@ -109,3 +107,4 @@ Note: It is essential to be inside the `./examples` folder before running the
 code, as the path is set accordingly in the `.py` file.
       
 
+### Visualize results
