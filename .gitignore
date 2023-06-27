@@ -13,11 +13,10 @@ dist/
 _skbuild/
 
 # Virtual environments
-venv/
-env/
-*.venv/
-*-venv/
-*-env/
+*venv/
+*env/
+venv*/
+env*/
 
 # IDE-specific files
 .vscode/
