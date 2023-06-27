@@ -21,7 +21,7 @@ To use this project on your host system, follow these steps:
 | Name         | Version | Description                                                                                                                        |
 | ------------ | ------- | ---------------------------------------------------------------------------------------------------------------------------------- |
 | `Python`     | >=3.7   | Running and calling the main code. The modules `pip` and `venv` must be available.                                                   |
-| `CMake `     | >=3.12  | Building the C++ mesh lib at package installation.                                                                                 |
+| `CMake `     | >=3.18  | Building the C++ mesh lib at package installation.                                                                                 |
 | `Clang/LLVM` | >=5     | Compiling the C++ mesh lib at package installation. Must support `-std=c++17`.                                                     |
 | `GCC`        | >=9     | Compiling the C++ mesh lib at package installation. As an alternative to `Clang/LLVM` if not available. Must support `-std=c++17`. |
 | `OpenCL`     | >=1.2   | Building the compute kernels at runtime. A Compatible driver, headers and compiler must be installed                               |

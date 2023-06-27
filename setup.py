@@ -4,7 +4,7 @@ from setuptools import find_packages
 setup(
     packages=find_packages(),
     name="rkms",
-    version="0.0.1",
+    version="1.0.1",
     author="Pierre Gerhard",
     author_email="pierre.gerhard@gmail.com",
     url="https://github.com/p-gerhard/reduced-kinetic-models-solver",
@@ -16,10 +16,9 @@ setup(
     python_requires=">=3.7",
     include_package_data=True,
     install_requires=[
-        "meshio",
+        "meshio[all]",
         "numpy",
-        "pybind11",
-        "pyopencl",
+        "pyopencl[test]",
     ],
     package_data={
         "rkms": [
