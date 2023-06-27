@@ -18,7 +18,7 @@ setup(
     install_requires=[
         "meshio",
         "numpy",
-        "pybind11"
+        "pybind11",
         "pyopencl",
     ],
     package_data={
