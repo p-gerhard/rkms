@@ -16,6 +16,8 @@ _skbuild/
 venv/
 env/
 *.venv/
+*-venv/
+*-env/
 
 # IDE-specific files
 .vscode/
