@@ -17,10 +17,9 @@ setup(
     include_package_data=True,
     install_requires=[
         "meshio",
-        "pyopencl",
         "numpy",
-        "h5py",
-        "Mako",
+        "pybind11"
+        "pyopencl",
     ],
     package_data={
         "rkms": [
