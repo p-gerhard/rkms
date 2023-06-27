@@ -1,0 +1,93 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+
+# Skbuild
+.skbuild/
+_skbuild/
+
+# Virtual environments
+venv/
+env/
+*.venv/
+
+# IDE-specific files
+.vscode/
+
+# Miscellaneous
+*.swp
+*~
+*.bak
+*.cache
+*.log
+
+#Pytests
+.pytest_cache/
+
+
+#Data
+*.dat
+*.csv
+*.json
+*.h5
+*.h5m
+*.msh
+*.pvtu
+*.xdmf
+*.xmf
+*.xml
+*.xdmf
+*.pvsm
+
+# Object files
+*.o
+*.ko
+*.obj
+*.elf
+
+# Linker output
+*.ilk
+*.map
+*.exp
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Libraries
+*.lib
+*.a
+*.la
+*.lo
+
+# Shared objects (inc. Windows DLLs)
+*.dll
+*.so
+*.so.*
+*.dylib
+
+# Executables
+*.exe
+*.out
+*.app
+*.i*86
+*.x86_64
+*.hex
+
+# Debug files
+*.dSYM/
+*.su
+*.idb
+*.pdb
+
+# Data
+/data/mesh/*
+
+# Examples
+/example/mesh/*
