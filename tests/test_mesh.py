@@ -32,7 +32,6 @@ def test_mesh_q4_unit_square_nx2_ny2():
 
     m = MeshStructured(
         filename="./tests/meshes/q4_unit_square_nx2_ny2.msh",
-        dim=Q4_ELEM.get("PHY_DIM"),
     )
 
     # Checking cells dimensions
@@ -87,7 +86,6 @@ def test_mesh_h8_unit_cube_nx2_ny2_nz2():
 
     m = MeshStructured(
         filename="./tests/meshes/h8_unit_cube_nx2_ny2_nz2.msh",
-        dim=H8_ELEM.get("PHY_DIM"),
     )
 
     # Checking cells dimensions
