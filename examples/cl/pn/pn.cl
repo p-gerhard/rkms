@@ -48,7 +48,7 @@
 #include "p11.cl"
 #endif
 
-static inline pn_src_null(const float t, const float x[DIM], float w[M])
+static inline void pn_src_null(const float t, const float x[DIM], float w[M])
 {
     for (int k = 0; k < M; k++) {
         w[k] = 0.f;

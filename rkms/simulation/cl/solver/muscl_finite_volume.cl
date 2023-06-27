@@ -1,37 +1,6 @@
 #ifndef SOLVER_CL
 #define SOLVER_CL
 
-// #ifndef __RKMS_REMOVE_DUMMY_MACROS__
-// // Setting dummy macros to avoid IDE complaints. When OpenCL compiler will build
-// // the program '__RKMS_REMOVE_DUMMY_MACROS__' will be defined by passing
-// // '-D __RKMS_REMOVE_DUMMY_MACROS__' compilation options thus, these
-// // dummy macros will vanish.
-// #ifndef __OPENCL_VERSION__
-// #include <math.h>
-// #define __kernel
-// #define __global
-// #define __constant
-// #define get_global_id
-// #endif
-
-// #define USE_MUSCL
-// #define NGRID (1)
-// #define M	  (1)
-// #define DT	  (1.f)
-// #define DX	  (1.f)
-// #define DY	  (1.f)
-
-// #ifndef IS_2D
-// #define DZ			  (1.f)
-// #define DIM			  (3)
-// #define VOL			  (DX * DY * DZ)
-// #define FACE_PER_ELEM (6)
-// #else
-// #define DIM			  (2)
-// #define FACE_PER_ELEM (4)
-// #define VOL			  (DX * DY)
-// #endif
-
 #if DIM == 2
 #define FACE_PER_ELEM (4)
 #define VOL			  (DX * DY)
@@ -360,9 +329,6 @@ __kernel void solver_time_step(const float tnow, __global const float *x,
 			// VF-scheme: compute the boundary numerical flux across the current
 			// face
 			model_flux_num_bd(w_cur, w_cur, vns[idx_face], flux);
-			// for (int k = 0; k < M; k++) {
-			// 	flux[k] = 0.f;
-			// }
 		}
 
 		// VF-scheme: add contribution across the current face

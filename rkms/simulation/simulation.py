@@ -53,7 +53,6 @@ class Simulation:
         filename: str,
         output_dir: str | None = None,
         use_muscl: bool = False,
-        overwrite=True,
         **kwargs
     ):
         # Set simulation final time
@@ -76,7 +75,7 @@ class Simulation:
         self.mesh = MeshStructured(filename)
 
         # Build OpenCL compilation options
-        self.cl_build_opts = [""]
+        self.cl_build_opts = ["-Werror", "-cl-std=CL1.2"]
         self.cl_build_opts.extend(self.model.cl_build_opts)
 
         # Add MUSCL OpenCL compilation options
@@ -92,66 +91,35 @@ class Simulation:
             self.mesh.dz,
         )
 
-        # WARNING: If files already exist they will be removed when
-        # overwrite==True
-        assert isinstance(overwrite, bool)
-        self.overwrite = overwrite
-
-        # Setup output directory
+        # Set output directory
         sub_dir = time.strftime("run_%Y%m%d_%H%M%S")
+        
         if output_dir is None:
             base_dir = os.path.abspath(os.getcwd())
         else:
             base_dir = os.path.abspath(output_dir)
 
         self.output_dir = os.path.join(base_dir, sub_dir)
-
-        if not os.path.exists(self.output_dir):
-            os.makedirs(self.output_dir)
-
-        # Create cl build directory
-        self.cl_build_dir = os.path.join(
-            self.output_dir,
-            CL_BUILD_DIR_NAME,
-        )
-        if not os.path.exists(self.cl_build_dir):
-            os.makedirs(self.cl_build_dir)
-
-        # Default cl solver file will be copied in ocl_build
+ 
         self.cl_solver_file = os.path.join(
             os.path.dirname(os.path.abspath(__file__)),
             CL_PATH_SOLVER_FILE,
         )
-
+        
         self.cl_solver_include_dirs = [
             os.path.join(os.path.dirname(os.path.abspath(__file__)), dir)
             for dir in CL_SOLVER_INCLUDE_DIRS
         ]
 
-        # Destination path for cl_solver_filer
-        dest = os.path.join(self.cl_build_dir, CL_PATH_SOLVER_FILE)
-
-        if self.overwrite:
-            try_remove(dest)
-
-        if not os.path.exists(dest):
-            shutil.copy(self.cl_solver_file, self.cl_build_dir)
-
-        # Setup path of solution (.xmf) file
-        self.output_xdmf = os.path.join(
-            self.output_dir,
-            XDMF_FILE_NAME,
-        )
-
+        # Setup ().xmf) filename
+        self.output_xdmf = XDMF_FILE_NAME
+        
         # Setup path for simulation parameters (.json) file
-        self.output_json = os.path.join(
-            self.output_dir,
-            JSON_FILE_NAME,
-        )
+        self.output_json = JSON_FILE_NAME
 
-        if self.overwrite:
-            try_remove(self.output_xdmf)
-            try_remove(self.output_json)
+        # Shouldn't happen since folder are timestamped
+        try_remove(self.output_xdmf)
+        try_remove(self.output_json)
 
         # Storing extra user parameters
         self.extra_parameters = kwargs
@@ -163,11 +131,9 @@ class Simulation:
             "CFL": self.cfl,
             "Use MUSCL": self.use_muscl,
             "CL full compile options": self.cl_build_opts,
-            "Folder CL build": self.cl_build_dir,
             "Folder results": self.output_dir,
             "File XMDF": self.output_xdmf,
             "File JSON": self.output_json,
-            "Overwrite existing results": self.overwrite,
             "Extra user parameters": self.extra_parameters,
         }
         return params
@@ -187,6 +153,22 @@ class Simulation:
         }
 
         return inject_vals
+
+
+    def __enter_output_dir(self) -> None:
+        # Creating the output directory
+        if not os.path.exists(self.output_dir):
+            try:
+                os.makedirs(self.output_dir)
+            except Exception as error:
+                logger.critical(error)
+                
+        # Entering the output directory
+        try:
+            os.chdir(self.output_dir)
+        except Exception as error:
+            logger.critical(error)
+
 
     def print_infos(self, all=True):
         params = self.get_params_to_print()
@@ -299,14 +281,12 @@ class Simulation:
 
     def solve(self):
         self.ocl_ctx, self.ocl_prg = cl_build_program(
-            self.cl_build_dir,
             self.model.cl_src_file,
             self.model.cl_inject_vals,
             self.cl_build_opts,
             self.model.cl_include_dirs,
             self.get_cl_solver_inject_vals(),
             self.cl_solver_include_dirs,
-            # self.cl_build_opts,
         )
 
         self.ocl_prop = cl.command_queue_properties.PROFILING_ENABLE
@@ -317,6 +297,8 @@ class Simulation:
 
         self.__allocate_devices_buffer()
         self.__allocate_host_buffer()
+        self.__enter_output_dir()
+
 
         self.t = 0
         ite = 0

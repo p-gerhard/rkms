@@ -1,7 +1,4 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 import numpy as np
-
 
 def is_num_type(val):
     return np.issubdtype(type(val), np.number)

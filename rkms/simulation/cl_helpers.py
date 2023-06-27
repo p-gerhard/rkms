@@ -60,7 +60,6 @@ def try_merge_dict(dict_a: dict, dict_b: dict) -> tuple[dict | str]:
 
 
 def cl_build_program(
-    build_dir: str,
     model_src_file: str,
     model_inject_vals: dict = {},
     model_build_opts: list[str] = [""],
@@ -69,13 +68,6 @@ def cl_build_program(
     solver_include_dirs: list[str] = [""],
     solver_build_opts: list[str] = [""],
 ):
-    tag = datetime.now().strftime("%d%m%Y_%H%M%S")
-    dir = os.path.join(build_dir, "tmp_{}".format(tag))
-
-    # Create tmp build dir
-    # if not os.path.exists(dir):
-    #     os.makedirs(dir)
-
     # Merge solver and model values to inject in source
     inject_vals, key, failed = try_merge_dict(
         solver_inject_vals,
@@ -100,12 +92,6 @@ def cl_build_program(
         else:
             src_buf = src_buf.replace("{}".format(k), "({})".format(v))
 
-    # dest = os.path.join(cl_build_dir, os.path.basename(cl_src_main_file))
-
-    # # Write final version of cl src main file
-    # with open(dest, "w") as f:
-    #     f.write(cl_src)
-
     # Set build options
     build_opts = solver_build_opts + model_build_opts
 
@@ -126,49 +112,3 @@ def cl_build_program(
     )
 
     return ocl_ctx, ocl_prg
-    # # Copy kernel source files to PyOpenCL's default kernel folder
-    # if copy_kernel_to_ocl_path:
-    #     self.ocl_include_default_path = _find_pyopencl_include_path()
-    #     self.dest_kernel_dir_list = build_subfolder_list(
-    #         kernel_base, self.ocl_include_default_path
-    #     )
-    #     self.dest_kernel_dir_list = list(set(self.dest_kernel_dir_list))
-
-    #     dir_util.copy_tree(kernel_base, self.ocl_include_default_path)
-
-    # else:
-    #     self.ocl_options.extend(["-I", kernel_base])
-
-    # # Remove copied files
-    # if copy_kernel_to_ocl_path:
-    #     recursive_remove(self.dest_kernel_dir_list)
-
-
-def cl_preprocess_main_src(cl_file: str, injection_dict: dict = {}) -> str:
-    # Load CL file
-    cl_src = ""
-    with open(cl_file, "r") as f:
-        cl_src = f.read()
-
-    # Get OpenCL numeric only parameters to inject in OpenCL source file
-    ocl_params = cl_process_injection_dict(injection_dict)
-
-    # For each (key-value) pair in ocl_params, the injection process inside the
-    # cl_file is achieved through the following steps:
-    #
-    # - Step 1: Transform the key string into "_key_".
-    #
-    # - Step 2: In cl_file, locate the string '_key_' and replace it with its
-    #           associated value.
-    #
-    # For instance, let's consider `ocl_params = {tmax : "1.20"}` and if in the
-    # OpenCL file, the line `#DEFINE TMAX _tmax_`, is present then it the
-    # injection process will produce in the cl_file :
-    #
-    # #define TMAX (1.20)
-
-    # Injection process
-    for k, v in ocl_params.items():
-        cl_src = cl_src.replace("_{}_".format(k), "({})".format(v))
-
-    return cl_src

@@ -1,10 +1,13 @@
 import os
 from rkms.simulation import *
 
-# Set some env. variables to controle pyopencl and nvidia platefrom behaviours
+# Set some env. variables to control pyopencl and nvidia platfrom behaviours
 os.environ["PYOPENCL_NO_CACHE"] = "1"
 os.environ["PYOPENCL_COMPILER_OUTPUT"] = "1"
 os.environ["CUDA_CACHE_DISABLE"] = "1"
+
+# Autoselect OpenCL platform #0
+os.environ["PYOPENCL_CTX"] = "0"
 
 ################################################################################
 # GENERIC PN MODEL
@@ -20,6 +23,7 @@ class PN(Model):
             cl_build_opts=[
                 "-D IS_SPHERICAL_HARMONICS_MODELS",
                 "-D USE_SPHERICAL_HARMONICS_P{order}".format(order=order),
+                "-cl-fast-relaxed-math",
             ],
             cl_src_file="./cl/pn/pn.cl",
             cl_include_dirs=["./cl/pn"],
@@ -150,7 +154,7 @@ if __name__ == "__main__":
         tmax=1,
         cfl=0.9,
         filename=filename,
-        use_muscl=False,
+        use_muscl=True,
     )
 
     simu.print_infos()
