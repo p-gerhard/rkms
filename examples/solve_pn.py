@@ -145,7 +145,7 @@ if __name__ == "__main__":
         # filename = "./meshes/q4_unit_square_nx2_ny2.msh"
         filename = "./meshes/q4_unit_square_nx1024_ny1024.msh"
     else:
-        m = P9D3()
+        m = P11D3()
         m.cl_inject_vals = cl_model_inject_val
         filename = "./meshes/unit_cube_nx100_ny100_nz100.msh"
 
