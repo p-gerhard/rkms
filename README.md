@@ -18,28 +18,28 @@ To use this project on your host system, follow these steps:
     | `OpenCL`     | >=1.2   | Required for building the compute kernels at runtime. Make sure to have a compatible driver, headers, and compiler installed. |
 
     **Note**: If you're working in a cluster environment, load the appropriate environment modules to make the required packages available.
+
+2. Clone the repository
+
+    ```bash
+    git clone https://github.com/p-gerhard/rkms.git
+    ``` 
        
-2. Create a virtual environment for the project:
+3. Create a virtual environment for the project:
 
     ```bash
     python3 -m venv venv-rkms
       ```
 
-2. Activate the virtual environment:
-   
-   ```bash
-    python3 -m venv venv-rkms
-    ```
-
-3. Activate the virtual environment:
+4. Activate the virtual environment:
 
     ```bash
     source venv-rkms/bin/activate
     ```
-4. Install the package
+5. Install the package
 
     ```bash
-    pip install git+https://github.com/p-gerhard/rkms
+    pip install .
     ```
     
 ## Running examples
