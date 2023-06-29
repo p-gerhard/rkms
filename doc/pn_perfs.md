@@ -22,11 +22,11 @@
 
 - Spatial expression: 
  
-            f(x,t) = 1e-8 + exp( ||x - pos|| / (2 * sig_xyz^2) )
+        f(x,t) = 1e-8 + exp( ||x - pos|| / (2 * sig_xyz^2) )
 
 - Velocity expression:
   
-            h(th,ph) = Intensity * exp( -(||th - th_0|| + ||ph - ph_0||) / (sig^2) )
+        h(th,ph) = Intensity * exp( -(||th - th_0|| + ||ph - ph_0||) / (sig^2) )
 
 - Source expression:
   
