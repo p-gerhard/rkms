@@ -9,7 +9,7 @@ void src_beam(const float t, const float x[2], float w[3])
     float c0;
     float eps = 1e-8F;
 
-    // Spatial coefficient for beam_1
+    // Spatial coefficient for beam_0
     c0 = -0.5F / (0.00500000F * 0.00500000F);
 
     norm = (x[0] - 0.25000000F) * (x[0] - 0.25000000F) +
@@ -17,7 +17,7 @@ void src_beam(const float t, const float x[2], float w[3])
 
     float p0 = eps + exp(c0 * norm);
 
-    // Spatial coefficient for beam_2
+    // Spatial coefficient for beam_1
     c0 = -0.5F / (0.00500000F * 0.00500000F);
 
     norm = (x[0] - 0.50000000F) * (x[0] - 0.50000000F) +
@@ -26,9 +26,9 @@ void src_beam(const float t, const float x[2], float w[3])
     float p1 = eps + exp(c0 * norm);
 
     // Source values
-    w[0] = +0.07500000F * p0 + 0.07500000F * p1;
+    w[0] = +0.05000000F * p0 + 0.05000000F * p1;
     w[1] = -0.00000000F * p0 - 0.00000000F * p1;
-    w[2] = -0.08981219F * p0 - 0.08981219F * p1;
+    w[2] = -0.00000000F * p0 + 0.06108434F * p1;
 }
 
 void num_flux_rus(const float wL[3], const float wR[3], const float vn[2],
@@ -51,7 +51,7 @@ void src_beam(const float t, const float x[3], float w[4])
     float c0;
     float eps = 1e-8F;
 
-    // Spatial coefficient for beam_1
+    // Spatial coefficient for beam_0
     c0 = -0.5F / (0.00500000F * 0.00500000F);
 
     norm = (x[0] - 0.25000000F) * (x[0] - 0.25000000F) +
@@ -60,7 +60,7 @@ void src_beam(const float t, const float x[3], float w[4])
 
     float p0 = eps + exp(c0 * norm);
 
-    // Spatial coefficient for beam_2
+    // Spatial coefficient for beam_1
     c0 = -0.5F / (0.00500000F * 0.00500000F);
 
     norm = (x[0] - 0.50000000F) * (x[0] - 0.50000000F) +
@@ -70,10 +70,10 @@ void src_beam(const float t, const float x[3], float w[4])
     float p1 = eps + exp(c0 * norm);
 
     // Source values
-    w[0] = +0.03988021F * p0 + 0.01994011F * p1;
-    w[1] = +0.04669387F * p0 + 0.00398147F * p1;
-    w[2] = -0.00000000F * p0 + 0.03376887F * p1;
-    w[3] = -0.04669387F * p0 - 0.00398147F * p1;
+    w[0] = +0.00443113F * p0 + 0.00443113F * p1;
+    w[1] = -0.00000000F * p0 - 0.00539994F * p1;
+    w[2] = +0.00765579F * p0 - 0.00000000F * p1;
+    w[3] = -0.00000000F * p0 + 0.00539994F * p1;
 }
 
 void num_flux_rus(const float wL[4], const float wR[4], const float vn[3],

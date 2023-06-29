@@ -9,7 +9,7 @@ void src_beam(const float t, const float x[2], float w[10])
     float c0;
     float eps = 1e-8F;
 
-    // Spatial coefficient for beam_1
+    // Spatial coefficient for beam_0
     c0 = -0.5F / (0.00500000F * 0.00500000F);
 
     norm = (x[0] - 0.25000000F) * (x[0] - 0.25000000F) +
@@ -17,7 +17,7 @@ void src_beam(const float t, const float x[2], float w[10])
 
     float p0 = eps + exp(c0 * norm);
 
-    // Spatial coefficient for beam_2
+    // Spatial coefficient for beam_1
     c0 = -0.5F / (0.00500000F * 0.00500000F);
 
     norm = (x[0] - 0.50000000F) * (x[0] - 0.50000000F) +
@@ -26,16 +26,16 @@ void src_beam(const float t, const float x[2], float w[10])
     float p1 = eps + exp(c0 * norm);
 
     // Source values
-    w[0] = +0.07500000F * p0 + 0.07500000F * p1;
+    w[0] = +0.05000000F * p0 + 0.05000000F * p1;
     w[1] = -0.00000000F * p0 - 0.00000000F * p1;
-    w[2] = -0.08981219F * p0 - 0.08981219F * p1;
+    w[2] = -0.00000000F * p0 + 0.06108434F * p1;
     w[3] = -0.00000000F * p0 - 0.00000000F * p1;
     w[4] = -0.00000000F * p0 - 0.00000000F * p1;
-    w[5] = +0.09385888F * p0 + 0.09385888F * p1;
+    w[5] = -0.06778408F * p0 + 0.06778408F * p1;
     w[6] = -0.00000000F * p0 - 0.00000000F * p1;
     w[7] = -0.00000000F * p0 - 0.00000000F * p1;
     w[8] = -0.00000000F * p0 - 0.00000000F * p1;
-    w[9] = -0.09059217F * p0 - 0.09059217F * p1;
+    w[9] = -0.00000000F * p0 + 0.07230568F * p1;
 }
 
 void num_flux_rus(const float wL[10], const float wR[10], const float vn[2],
@@ -90,7 +90,7 @@ void src_beam(const float t, const float x[3], float w[16])
     float c0;
     float eps = 1e-8F;
 
-    // Spatial coefficient for beam_1
+    // Spatial coefficient for beam_0
     c0 = -0.5F / (0.00500000F * 0.00500000F);
 
     norm = (x[0] - 0.25000000F) * (x[0] - 0.25000000F) +
@@ -99,7 +99,7 @@ void src_beam(const float t, const float x[3], float w[16])
 
     float p0 = eps + exp(c0 * norm);
 
-    // Spatial coefficient for beam_2
+    // Spatial coefficient for beam_1
     c0 = -0.5F / (0.00500000F * 0.00500000F);
 
     norm = (x[0] - 0.50000000F) * (x[0] - 0.50000000F) +
@@ -109,22 +109,22 @@ void src_beam(const float t, const float x[3], float w[16])
     float p1 = eps + exp(c0 * norm);
 
     // Source values
-    w[0] = +0.03988021F * p0 + 0.01994011F * p1;
-    w[1] = +0.04669387F * p0 + 0.00398147F * p1;
-    w[2] = -0.00000000F * p0 + 0.03376887F * p1;
-    w[3] = -0.04669387F * p0 - 0.00398147F * p1;
-    w[4] = +0.04776039F * p0 + 0.00107388F * p1;
-    w[5] = -0.00000000F * p0 + 0.00851397F * p1;
-    w[6] = -0.03883105F * p0 + 0.04170924F * p1;
-    w[7] = -0.00000000F * p0 - 0.00851397F * p1;
-    w[8] = +0.04776039F * p0 + 0.00107388F * p1;
-    w[9] = +0.04515972F * p0 + 0.00033573F * p1;
-    w[10] = -0.00000000F * p0 + 0.00265847F * p1;
-    w[11] = -0.03468426F * p0 + 0.01334059F * p1;
-    w[12] = -0.00000000F * p0 + 0.04627203F * p1;
-    w[13] = +0.03468426F * p0 - 0.01334059F * p1;
-    w[14] = -0.00000000F * p0 + 0.00265847F * p1;
-    w[15] = -0.04515972F * p0 - 0.00033573F * p1;
+    w[0] = +0.00443113F * p0 + 0.00443113F * p1;
+    w[1] = -0.00000000F * p0 - 0.00539994F * p1;
+    w[2] = +0.00765579F * p0 - 0.00000000F * p1;
+    w[3] = -0.00000000F * p0 + 0.00539994F * p1;
+    w[4] = -0.00002989F * p0 + 0.00597732F * p1;
+    w[5] = -0.00000000F * p0 - 0.00000000F * p1;
+    w[6] = +0.00983438F * p0 - 0.00488022F * p1;
+    w[7] = -0.00000000F * p0 - 0.00000000F * p1;
+    w[8] = -0.00002989F * p0 + 0.00597732F * p1;
+    w[9] = -0.00000000F * p0 - 0.00636028F * p1;
+    w[10] = -0.00007848F * p0 - 0.00000000F * p1;
+    w[11] = -0.00000000F * p0 + 0.00492616F * p1;
+    w[12] = +0.01154968F * p0 - 0.00000000F * p1;
+    w[13] = -0.00000000F * p0 - 0.00492616F * p1;
+    w[14] = -0.00007848F * p0 - 0.00000000F * p1;
+    w[15] = -0.00000000F * p0 + 0.00636028F * p1;
 }
 
 void num_flux_rus(const float wL[16], const float wR[16], const float vn[3],
