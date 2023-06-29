@@ -1,5 +1,8 @@
+from __future__ import annotations
+
 import os
 from rkms.simulation import *
+
 
 # Set some env. variables to control pyopencl and nvidia platfrom behaviours
 os.environ["PYOPENCL_NO_CACHE"] = "1"

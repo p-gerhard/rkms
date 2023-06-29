@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 class Solver:
     def __init__(
         self,

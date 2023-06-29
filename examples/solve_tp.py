@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import os
 from rkms.simulation import *
 
@@ -63,17 +65,16 @@ if __name__ == "__main__":
         "__VZ__": 0.0,
     }
 
-    solve_d2 = True
+    solve_d2 = False
 
     if solve_d2:
         m = TransportD2()
         m.cl_inject_vals = cl_model_inject_val
-        # filename = "./meshes/q4_unit_square_nx2_ny2.msh"
-        filename = "./meshes/q4_unit_square_nx1024_ny1024.msh"
+        filename = "./meshes/unit_square_nx1024_ny1024.msh"
     else:
         m = TransportD3()
         m.cl_inject_vals = cl_model_inject_val
-        filename = "./meshes/h8_unit_cube_nx2_ny2_nz2.msh"
+        filename = "./meshes/unit_cube_nx100_ny100_nz100.msh"
 
     simu = Simulation(
         model=m,

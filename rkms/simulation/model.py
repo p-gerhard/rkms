@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import logging
 import os
 
@@ -19,8 +21,8 @@ class Model:
         dim: int,
         cl_src_file: str,
         cl_inject_vals: dict = {},
-        cl_include_dirs: list[str] = [""],
-        cl_build_opts: list[str] = [""],
+        cl_include_dirs: List[str] = [""],
+        cl_build_opts: List[str] = [""],
     ) -> None:
         self.order = order
         self.dim = dim
@@ -85,20 +87,20 @@ class Model:
         self.__cl_inject_vals = res
 
     @property
-    def cl_build_opts(self) -> list[str]:
+    def cl_build_opts(self) -> List[str]:
         return self.__cl_build_opts
 
     @cl_build_opts.setter
-    def cl_build_opts(self, value: list[str]) -> None:
+    def cl_build_opts(self, value: List[str]) -> None:
         assert isinstance(value, list)
         self.__cl_build_opts = value
 
     @property
-    def cl_include_dirs(self) -> list[str]:
+    def cl_include_dirs(self) -> List[str]:
         return self.__cl_include_dirs
 
     @cl_include_dirs.setter
-    def cl_include_dirs(self, value: list[str]) -> None:
+    def cl_include_dirs(self, value: List[str]) -> None:
         assert isinstance(value, list)
         self.__cl_include_dirs = value
 
