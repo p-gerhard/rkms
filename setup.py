@@ -22,7 +22,7 @@ setup(
     ],
     package_data={
         "rkms": [
-            "simulation/cl/**/*.cl",
+            "solver/cl/**/*.cl",
             "mesh/src/**/*",
         ]
     },

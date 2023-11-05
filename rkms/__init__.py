@@ -1,5 +1,3 @@
-# from . import mesh, simulation, postprocessing
-from . import simulation
+from . import mesh, model, solver
 
-# __all__ = ["mesh", "simulation", "postprocessing"]
-__all__ = ["simulation"]
+__all__ = ["mesh", "model", "solver"]

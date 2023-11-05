@@ -20,7 +20,7 @@ class Model:
         order: int,
         dim: int,
         cl_src_file: str,
-        cl_inject_vals: dict = {},
+        cl_replace_map: dict = {},
         cl_include_dirs: List[str] = [""],
         cl_build_opts: List[str] = [""],
     ) -> None:
@@ -28,7 +28,7 @@ class Model:
         self.dim = dim
         self.cl_build_opts = cl_build_opts
         self.cl_src_file = cl_src_file
-        self.cl_inject_vals = cl_inject_vals
+        self.cl_replace_map = cl_replace_map
         self.cl_include_dirs = cl_include_dirs
         self.m = 0
         self.nb_macro_to_reconstruct = 0
@@ -68,11 +68,11 @@ class Model:
         self.__cl_src_file = value
 
     @property
-    def cl_inject_vals(self) -> dict:
-        return self.__cl_inject_vals
+    def cl_replace_map(self) -> dict:
+        return self.__cl_replace_map
 
-    @cl_inject_vals.setter
-    def cl_inject_vals(self, value: dict) -> None:
+    @cl_replace_map.setter
+    def cl_replace_map(self, value: dict) -> None:
         assert isinstance(value, dict)
 
         res = {}
@@ -84,7 +84,7 @@ class Model:
                     "pair {}:{} cannot be inject, value type must be numeric or"
                     "string".format(k, v)
                 )
-        self.__cl_inject_vals = res
+        self.__cl_replace_map = res
 
     @property
     def cl_build_opts(self) -> List[str]:
@@ -128,7 +128,7 @@ class Model:
             "Order": self.order,
             "Dim": self.dim,
             "CL file": self.cl_src_file,
-            "CL inject values": self.cl_inject_vals,
+            "CL inject values": self.cl_replace_map,
             "CL include folder": self.cl_include_dirs,
             "Nb. of variable": self.m,
             "Nb. macro vars to reconstruct": self.nb_macro_to_reconstruct,
