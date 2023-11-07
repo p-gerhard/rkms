@@ -9,23 +9,35 @@
 #define FACE_PER_ELEM (6)
 #endif
 
+#ifdef USE_DOUBLE
+typedef double real_t;
+#define ZERO         (0.)
+#define ONE          (1.)
+#define ONE_OVER_TWO (0.5)
+#else
+typedef float real_t;
+#define ZERO         (0.f)
+#define ONE          (1.f)
+#define ONE_OVER_TWO (0.5f)
+#endif
+
 // Model dependent initial condition function
-void model_init_cond(const float t, const float x[DIM], float w_cur[M]);
+void model_init_cond(const real_t t, const real_t x[DIM], real_t w_cur[M]);
 
 // Model dependent source function
-void model_src(const float t, const float x[DIM], const float w_cur[M],
-               float src[M]);
+void model_src(const real_t t, const real_t x[DIM], const real_t w_cur[M],
+               real_t src[M]);
 
 // Model dependent VF numerical flux function
-void model_flux_num(const float w_cur[M], const float w_nei[M],
-                    const float vn[DIM], float flux[M]);
+void model_flux_num(const real_t w_cur[M], const real_t w_nei[M],
+                    const real_t vn[DIM], real_t flux[M]);
 
 // Model dependent VF numerical boundary flux function
-void model_flux_num_bd(const float w_cur[M], const float w_nei[M],
-                       const float vn[DIM], float flux[M]);
+void model_flux_num_bd(const real_t w_cur[M], const real_t w_nei[M],
+                       const real_t vn[DIM], real_t flux[M]);
 
-inline void load_loc_solution_buf(const __global float *sol_glob, const long id,
-                                  float sol[M])
+inline void load_loc_solution_buf(const __global real_t *sol_glob,
+                                  const long id, real_t sol[M])
 {
     for (int k = 0; k < M; k++) {
         long imem = id + k * NGRID;
@@ -33,8 +45,8 @@ inline void load_loc_solution_buf(const __global float *sol_glob, const long id,
     }
 }
 
-inline void fill_glob_solution_buf(const long id, const float sol[M],
-                                   __global float *sol_glob)
+inline void fill_glob_solution_buf(const long id, const real_t sol[M],
+                                   __global real_t *sol_glob)
 {
     for (int k = 0; k < M; k++) {
         long imem = id + k * NGRID;
@@ -42,8 +54,8 @@ inline void fill_glob_solution_buf(const long id, const float sol[M],
     }
 }
 
-inline void load_loc_coordinate_buf(const __global float *xyz_glob,
-                                    const long id, float xyz[DIM])
+inline void load_loc_coordinate_buf(const __global real_t *xyz_glob,
+                                    const long id, real_t xyz[DIM])
 {
 #pragma unroll
     for (int k = 0; k < DIM; k++) {
@@ -52,8 +64,8 @@ inline void load_loc_coordinate_buf(const __global float *xyz_glob,
     }
 }
 
-inline void fill_glob_coordinate_buf(const long id, const float xyz[M],
-                                     __global float *xyz_glob)
+inline void fill_glob_coordinate_buf(const long id, const real_t xyz[M],
+                                     __global real_t *xyz_glob)
 {
     for (int k = 0; k < M; k++) {
         long imem = id + k * NGRID;
@@ -82,12 +94,12 @@ inline void fill_glob_connectivity_buf(const long id, long ids[FACE_PER_ELEM],
 }
 
 #ifdef USE_MUSCL
-inline float muscl_minmod(const float alpha, const float beta)
+inline real_t muscl_minmod(const real_t alpha, const real_t beta)
 {
-    float alpha_beta = alpha * beta;
+    real_t alpha_beta = alpha * beta;
     if (alpha_beta > 0) {
-        float fabs_a = fabs(alpha);
-        float fabs_b = fabs(beta);
+        real_t fabs_a = fabs(alpha);
+        real_t fabs_b = fabs(beta);
 
         if (fabs_a < fabs_b) {
             return alpha;
@@ -99,9 +111,9 @@ inline float muscl_minmod(const float alpha, const float beta)
     return 0.f;
 }
 
-static void muscl_get_slope(const __global float *wn,
+static void muscl_get_slope(const __global real_t *wn,
                             const long ids_nei[FACE_PER_ELEM],
-                            const float w_cur[M], float s_cur[DIM][M])
+                            const real_t w_cur[M], real_t s_cur[DIM][M])
 {
 #pragma unroll
     for (int dim = 0; dim < DIM; dim++) {
@@ -116,15 +128,15 @@ static void muscl_get_slope(const __global float *wn,
             // 2D: (L: dir -nx) (S: dir -ny )
             // 3D: (L: dir -nx) (B: dir -ny) (S: dir -nz )
             imem = (id_nei_2 != -1) ? (id_nei_2 + k * NGRID) : -1;
-            float sm = (imem != -1) ? (w_cur[k] - wn[imem]) : 0.f;
-            // float sm = (imem != -1) ? (wn[imem] - w_cur[k]) : 0.f;
+            real_t sm = (imem != -1) ? (w_cur[k] - wn[imem]) : ZERO;
+            // real_t sm = (imem != -1) ? (wn[imem] - w_cur[k]) : 0.f;
 
             // Compute the slope (+) between w_{i} and w_{i+1}:
             // 2D: (R: dir +nx) (F: dir +ny )
             // 3D: (L: dir +nx) (F: dir +ny) (N: dir +nz )
             imem = (id_nei_1 != -1) ? (id_nei_1 + k * NGRID) : -1;
-            float sp = (imem != -1) ? (wn[imem] - w_cur[k]) : 0.f;
-            // float sp = (imem != -1) ? (w_cur[k] - wn[imem]) : 0.f;
+            real_t sp = (imem != -1) ? (wn[imem] - w_cur[k]) : ZERO;
+            // real_t sp = (imem != -1) ? (w_cur[k] - wn[imem]) : 0.f;
 
             // Compute slope value: s = muscl_minmod(sm, sp)
             s_cur[dim][k] = muscl_minmod(sm, sp);
@@ -132,10 +144,10 @@ static void muscl_get_slope(const __global float *wn,
     }
 }
 
-static void muscl_reconstruct(const __global float *wn, const float vn[DIM],
-                              const long id_cur, const float s_cur[DIM][M],
-                              const long id_nei, const float s_nei[DIM][M],
-                              float w_cur[M], float w_nei[M])
+static void muscl_reconstruct(const __global real_t *wn, const real_t vn[DIM],
+                              const long id_cur, const real_t s_cur[DIM][M],
+                              const long id_nei, const real_t s_nei[DIM][M],
+                              real_t w_cur[M], real_t w_nei[M])
 {
     for (int k = 0; k < M; k++) {
         long imem_cur = id_cur + k * NGRID;
@@ -143,35 +155,35 @@ static void muscl_reconstruct(const __global float *wn, const float vn[DIM],
 
         // Reconstruct w(-) : w_{i} - 0.5 * s
         w_nei[k] = wn[imem_nei];
-        w_nei[k] -= vn[0] * 0.5f * s_nei[0][k];
-        w_nei[k] -= vn[1] * 0.5f * s_nei[1][k];
+        w_nei[k] -= vn[0] * ONE_OVER_TWO * s_nei[0][k];
+        w_nei[k] -= vn[1] * ONE_OVER_TWO * s_nei[1][k];
 #ifndef IS_2D
-        w_nei[k] -= vn[2] * 0.5f * s_nei[2][k];
+        w_nei[k] -= vn[2] * ONE_OVER_TWO * s_nei[2][k];
 #endif
 
         // Reconstruct w(+) : w_{i} + 0.5 * s
         w_cur[k] = wn[imem_cur];
-        w_cur[k] += vn[0] * 0.5f * s_cur[0][k];
-        w_cur[k] += vn[1] * 0.5f * s_cur[1][k];
+        w_cur[k] += vn[0] * ONE_OVER_TWO * s_cur[0][k];
+        w_cur[k] += vn[1] * ONE_OVER_TWO * s_cur[1][k];
 #ifndef IS_2D
-        w_cur[k] += vn[2] * 0.5f * s_cur[2][k];
+        w_cur[k] += vn[2] * ONE_OVER_TWO * s_cur[2][k];
 #endif
     }
 }
 
-static void muscl_reconstruct_bd(const __global float *wn, const float vn[DIM],
-                                 const long id_cur, const float s_cur[DIM][M],
-                                 float w_cur[M])
+static void muscl_reconstruct_bd(const __global real_t *wn,
+                                 const real_t vn[DIM], const long id_cur,
+                                 const real_t s_cur[DIM][M], real_t w_cur[M])
 
 {
     for (int k = 0; k < M; k++) {
         long imem_cur = id_cur + k * NGRID;
 
         w_cur[k] = wn[imem_cur];
-        w_cur[k] += vn[0] * 0.5f * s_cur[0][k];
-        w_cur[k] += vn[1] * 0.5f * s_cur[1][k];
+        w_cur[k] += vn[0] * ONE_OVER_TWO * s_cur[0][k];
+        w_cur[k] += vn[1] * ONE_OVER_TWO * s_cur[1][k];
 #ifndef IS_2D
-        w_cur[k] += vn[2] * 0.5f * s_cur[2][k];
+        w_cur[k] += vn[2] * ONE_OVER_TWO * s_cur[2][k];
 #endif
     }
 }
@@ -186,16 +198,16 @@ static void muscl_reconstruct_bd(const __global float *wn, const float vn[DIM],
  * @param x Input buffer containing the input data (coordinates)
  * @param wn Output buffer for storing the initialized solution values
  */
-__kernel void solver_init_sol(__global const float *x, __global float *wn)
+__kernel void solver_init_sol(__global const real_t *x, __global real_t *wn)
 {
     // Current cell: ID
     const long id_cur = get_global_id(0);
 
     // Current cell: solution values at t=0
-    float w_cur[M];
+    real_t w_cur[M];
 
     // Current cell: load center coordinates
-    float xyz[DIM];
+    real_t xyz[DIM];
     load_loc_coordinate_buf(x, id_cur, xyz);
 
     // Current cell: compute source values
@@ -205,70 +217,70 @@ __kernel void solver_init_sol(__global const float *x, __global float *wn)
     fill_glob_solution_buf(id_cur, w_cur, wn);
 }
 
-__kernel void solver_time_step(const float tnow, __global const float *x,
+__kernel void solver_time_step(const real_t tnow, __global const real_t *x,
                                __global const long *elem2elem,
-                               __global const float *wn, __global float *wnp1)
+                               __global const real_t *wn, __global real_t *wnp1)
 {
     // Current cell: ID
     const long id_cur = get_global_id(0);
 
     // Current cell: center coordinates
-    float xyz[DIM];
+    real_t xyz[DIM];
 
     // Current cell: neighbours IDs
     long ids_nei_cur[FACE_PER_ELEM];
 
     // VF-scheme: numerical flux values
-    float flux[M];
+    real_t flux[M];
 
     // Current cell: source value at t_n
-    float src[M];
+    real_t src[M];
 
     // Current cell: solution values at t_n
-    float w_cur[M];
+    real_t w_cur[M];
 
     // Current cell: solution values in t_{n+1}
-    float w_nxt[M];
+    real_t w_nxt[M];
 
     // Neighbour cell: solution values at t_n
-    float w_nei[M];
+    real_t w_nei[M];
 
 #ifdef USE_MUSCL
     // Neighbour cell: neighbour IDs
     long ids_nei_nei[FACE_PER_ELEM];
 
     // Current cell: MUSCL slope
-    float s_cur[DIM][M];
+    real_t s_cur[DIM][M];
 
     // Neighbour cell: MUSCL slope
-    float s_nei[DIM][M];
+    real_t s_nei[DIM][M];
 #endif
 
     // Constant across all cells: normal vectors to the face
 #ifdef IS_2D
-    const float vns[4][2] = {
-        { 1.f,  0.f},
-        {-1.f,  0.f},
-        { 0.f,  1.f},
-        { 0.f, -1.f}
+    const real_t vns[4][2] = {
+        { ONE, ZERO},
+        {-ONE, ZERO},
+        {ZERO,  ONE},
+        {ZERO, -ONE}
     };
 #else
-    const float vns[6][3] = {
-        { 1.f,  0.f,  0.f},
-        {-1.f,  0.f,  0.f},
-        { 0.f,  1.f,  0.f},
-        { 0.f, -1.f,  0.f},
-        { 0.f,  0.f,  1.f},
-        { 0.f,  0.f, -1.f}
+    const real_t vns[6][3] = {
+        { ONE, ZERO, ZERO},
+        {-ONE, ZERO, ZERO},
+        {ZERO,  ONE, ZERO},
+        {ZERO, -ONE, ZERO},
+        {ZERO, ZERO,  ONE},
+        {ZERO, ZERO, -ONE}
     };
 #endif
 
     // Constant across all cells: surface values of the face
 #ifdef IS_2D
-    const float dt_mult_ds_over_vol[4] = { DT * DY / VOL, DT * DY / VOL,
-                                           DT * DX / VOL, DT * DX / VOL };
+    const real_t dt_mult_ds_over_vol[4] = { DT * DY / VOL, DT * DY / VOL,
+                                            DT * DX / VOL, DT * DX / VOL };
 #else
-    const float dt_mult_ds_over_vol[6] = {
+    const real_t dt_mult_ds_over_vol[6] = {
         DT * (DY * DZ) / VOL, DT * (DY * DZ) / VOL, DT * (DX * DY) / VOL,
         DT * (DX * DY) / VOL, DT * (DZ * DY) / VOL, DT * (DZ * DY) / VOL
     };

@@ -3,150 +3,175 @@
 
 #pragma OPENCL EXTENSION cl_khr_fp64 : enable
 
-// Light Speed
-#define LIGHT_SPEED 299792458.F
+// Speed of light in vaccum
+#define C_LIGHT_VACCUM 299792458.
 
-typedef double real_t;
-
-real_t gamma_h0(const real_t T)
+// Collisional ionisation rate in cm^{3}.s^{-1} (Maselli et al. 2003)
+double gamma_h0(const double T)
 {
-    real_t res = 5.85e-11F;
+    double res = 5.85e-11;
     res *= sqrt(T);
-    res *= 1.0F / (1.0F + sqrt(T / 1.e5F));
-    res *= exp(-157809.1F / T);
-    res *= 1e-6F; // to cube meter
+    res *= 1.0 / (1.0 + sqrt(T / 1.e5));
+    res *= exp(-157809.1 / T);
+
+    // Convert to m^{3}.s^{-1}
+    res *= 1e-6;
     return res;
 }
 
-real_t gamma_h0_opt(const real_t T)
+// Case A - Recombination rate in cm^{3}.s^{-1} (Hui & Gnedin 1997)
+double alpha_ah(const double T)
 {
-    real_t t0 = -37.37750491965501150289710039036636229079507786927246280283;
-    real_t t1 = 0.0031622776601683793319988935444327185337195551393252168268;
-    real_t t2 = t1 + rsqrt(T);
-    real_t t3 = exp(t0 - 157809.1 / T);
-
-    return t3 / t2;
-}
-
-real_t alpha_ah(const real_t T)
-{
-    real_t lambda = 2.0 * 157807.0 / T;
-    real_t res = 1.269e-13;
+    double lambda = 2.0 * 157807.0 / T;
+    double res = 1.269e-13;
     res *= pow(lambda, 1.503);
     res /= pow(1.0 + pow(lambda / 0.522, 0.47), 1.923);
-    res *= 1e-6F; // to cube meter
+
+    // Convert to m^{3}.s^{-1}
+    res *= 1e-6;
     return res;
 }
 
-real_t recombination_cooling_rate_ah(const real_t T)
+// Case A - HII recombination cooling rate in erg.cm^{3}.s^{-1} (Hui & Gnedin
+// 1997)
+double recombination_cooling_rate_ah(const double T)
 {
-    real_t lambda = 2.0 * 157807.0 / T;
-    real_t res = 1.778e-29 * pow(lambda, 1.965);
+    double lambda = 2.0 * 157807.0 / T;
+    double res = 1.778e-29 * pow(lambda, 1.965);
     res /= pow(1.0 + pow(lambda / 0.541, 0.502), 2.697);
-    res *= 1e-6; // to cube meter
-    res *= 1e-7; // to cube joule
+
+    // Convert to erg.m^{3}.s^{-1}
+    res *= 1e-6;
+
+    // Convert to J.m^{3}.s^{-1}
+    res *= 1e-7;
     return res;
 }
 
-real_t alpha_bh(const real_t T)
+// Case B - Recombination rate from in cm^{3}.s^{-1} (Hui & Gnedin 1997)
+double alpha_bh(const double T)
 {
-    real_t lambda = 2.0 * 157807.0 / T;
-    real_t res = 2.753e-14;
+    double lambda = 2.0 * 157807.0 / T;
+    double res = 2.753e-14;
     res *= pow(lambda, 1.5);
     res /= pow(1.0 + pow(lambda / 2.74, 0.407), 2.242);
-    res *= 1e-6F; // to cube meter
+
+    // Convert to m^{3}.s^{-1}
+    res *= 1e-6;
     return res;
 }
 
-real_t beta_h(const real_t T)
+// HI collisional ionisation coefficient in cm^{3}.s^{-1}.K^{3/2} (Hui & Gnedin
+// 1997)
+double beta_h(const double T)
 {
-    real_t lambda = 2.0 * 157807.0 / T;
-    real_t res =
+    double lambda = 2.0 * 157807.0 / T;
+    double res =
         21.11 * pow(T, -1.5) * exp(-lambda / 2.0) * pow(lambda, -1.089);
     res /= pow(1.0 + pow(lambda / 0.354, 0.874), 1.01);
-    res *= 1e-6; // to cube meter
+
+    // Convert to m^{3}.s^{-1}
+    res *= 1e-6;
     return res;
 }
 
-// Collisional ionisation cooling
-real_t ksi_h0(const real_t T)
+// Collisional ionisation cooling in erg.cm^{3}.s^{-1} (Maselli et al. 2003)
+double ksi_h0(const double T)
 {
-    real_t res = 1.27e-21 * sqrt(T) / (1.0 + sqrt(T / 1.e5));
+    double res = 1.27e-21 * sqrt(T) / (1.0 + sqrt(T / 1.e5));
     res *= exp(-157809.1 / T);
-    res *= 1e-6; // to cube meter
-    res *= 1e-7; // to cube joule
+
+    // Convert to erg.m^{3}.s^{-1}
+    res *= 1e-6;
+
+    // Convert to J.m^{3}.s^{-1}
+    res *= 1e-7;
     return res;
 }
 
-// Recombination cooling
-real_t eta_h0(const real_t T)
+// Recombination cooling for H0 in erg.cm^{3}.s^{-1} (Maselli et al. 2003)
+// Case A or B or total ?
+double eta_h0(const double T)
 {
-    real_t res =
+    double res =
         8.7e-27 * sqrt(T) * pow(T / 1.e3, -0.2) / (1.0 + pow(T / 1.e6, 0.7));
-    res *= 1e-6; // to cube meter
-    res *= 1e-7; // to cube joule
+
+    // Convert to erg.m^{3}.s^{-1}
+    res *= 1e-6;
+
+    // Convert to J.m^{3}.s^{-1}
+    res *= 1e-7;
     return res;
 }
 
-// Collisional excitation cooling
-real_t psi_h0(const real_t T)
+// Collisional exciation cooling for H0 in erg.cm^{3}.s^{-1} (Maselli et al.
+// 2003)
+double psi_h0(const double T)
 {
-    real_t res = 7.5e-19 / (1.0 + sqrt(T / 1.e5));
+    double res = 7.5e-19 / (1.0 + sqrt(T / 1.e5));
     res *= exp(-118348.0 / T);
-    res *= 1e-6; // to cube meter
-    res *= 1e-7; // to cube joule
+
+    // Convert to erg.m^{3}.s^{-1}
+    res *= 1e-6;
+
+    // Convert to J.m^{3}.s^{-1}
+    res *= 1e-7;
     return res;
 }
 
-real_t beta_bremsstrahlung(const real_t T)
+// Bremsstrahlung cooling in erg.cm^{3}.s^{-1} (Maselli et al. 2003) WARNING: we
+// took the densities out of the formula so one needs to multiply the result by
+// rho_electrons^2 (in case of pure Hydrogen chemistry)
+double beta_bremsstrahlung(const double T)
 {
-    real_t res = 1.42e-27 * sqrt(T);
-    res *= 1e-6; // to cube meter
-    res *= 1e-7; // to cube joule
+    double res = 1.42e-27 * sqrt(T);
+    // Convert to erg.m^{3}.s^{-1}
+    res *= 1e-6;
+
+    // Convert to J.m^{3}.s^{-1}
+    res *= 1e-7;
     return res;
 }
 
-// Gives result in erg cm^3 s⁻1
-// Multiply by rho^2
-
-real_t cooling_rate(const real_t T, const real_t x)
+// Total cooling rate (sum of terms below) in erg.cm^{3}.s^{-1}
+double cooling_rate(const double T, const double x)
 {
-    const real_t t0 = x * x;
-    const real_t t1 = 1.0 - x;
-    const real_t t2 = t1 * t1;
-    real_t res = (beta_bremsstrahlung(T) + eta_h0(T)) * t0 +
+    const double t0 = x * x;
+    const double t1 = 1.0 - x;
+    const double t2 = t1 * t1;
+    double res = (beta_bremsstrahlung(T) + eta_h0(T)) * t0 +
                  (psi_h0(T) + ksi_h0(T)) * t2;
     return res;
 }
 
-real_t cooling_rate_density(const real_t T, const real_t rho, const real_t x_n)
+double cooling_rate_density(const double T, const double rho, const double x_n)
 {
-    const real_t t0 = rho * x_n;
-    const real_t t1 = t0 * t0;
-    const real_t t2 = t0 * rho - t1;
+    const double t0 = rho * x_n;
+    const double t1 = t0 * t0;
+    const double t2 = t0 * rho - t1;
 
     return (beta_bremsstrahlung(T) + eta_h0(T)) * t1 +
            (psi_h0(T) + ksi_h0(T)) * t2;
 }
 
-real_t heating_rate(const real_t rho, const real_t x, const real_t x_n,
-                    const real_t N, const real_t al_i)
+double heating_rate(const double rho, const double x, const double x_n,
+                    const double N, const double al_i)
 {
-    const real_t e = (20.28 - 13.6) * 1.60218e-19;
+    const double e = (20.28 - 13.6) * 1.60218e-19;
     // Short time step
-    return rho * (1 - x_n) * N * al_i * e * LIGHT_SPEED;
+    return rho * (1 - x_n) * N * al_i * e * C_LIGHT_VACCUM;
 }
 
 // TODO: FUNCTION IS NOT SAFE !!!!!!!!!
-real_t get_root_newton_raphson(const real_t a, const real_t b, const real_t c,
-                               const real_t d)
+double get_root_newton_raphson(const double a, const double b, const double c,
+                               const double d)
 {
-    const real_t eps = 1e-6;
+    const double eps = 1e-6;
 
-    real_t x = 0.5;
-    real_t res = 1.0;
+    double x = 0.5;
+    double res = 1.0;
 
-    real_t f, df, t2, t3;
+    double f, df, t2, t3;
 
     while (fabs(res) >= eps) {
         // Intermediate variables
@@ -169,9 +194,9 @@ __kernel void chem_init_sol(__global float *nh, __global float *temp,
     // Current cell ID
     const long id = get_global_id(0);
 
-    xi[id] = 1e-4F;
-    nh[id] = 1e6F;
-    temp[id] = 2e3F;
+    xi[id] = 1e-4;
+    nh[id] = 1e6;
+    temp[id] = 2e3;
 }
 
 __kernel void chem_step(__global const float *nh, __global float *wn,
@@ -182,7 +207,7 @@ __kernel void chem_step(__global const float *nh, __global float *wn,
 
     // Photon density
     const float N = wn[id];
-    const float N_pos = max(0.F, wn[id]);
+    const float N_pos = max(0, wn[id]);
 
     const float x = xi[id];
     const float T = temp[id];
@@ -190,7 +215,7 @@ __kernel void chem_step(__global const float *nh, __global float *wn,
 
     // Chemistry coefficients
     //const float al_i = 1.09e-18*c;
-    const float al_i = 2.493e-22F;
+    const float al_i = 2.493e-22;
     const float al = alpha_ah(T);
     const float al_b = alpha_bh(T);
     const float bt = beta_h(T);
@@ -198,14 +223,14 @@ __kernel void chem_step(__global const float *nh, __global float *wn,
     // Intermediate vars
     const float t0 = rho * rho;
     const float t1 = t0 * DT;
-    const float t2 = al_i * LIGHT_SPEED;
+    const float t2 = al_i * C_LIGHT_VACCUM;
     const float t3 = rho / t2;
-    const float t4 = 1.F / (t2 * DT);
+    const float t4 = 1. / (t2 * DT);
 
     // Compute new x (x_n)
     const float m = (al_b + bt) * t1;
-    const float n = rho - (al + bt) * t3 - (al_b + 2.F * bt) * t1;
-    const float p = -rho * (1.F + x) - N_pos - t4 + bt * (t3 + t1);
+    const float n = rho - (al + bt) * t3 - (al_b + 2. * bt) * t1;
+    const float p = -rho * (1. + x) - N_pos - t4 + bt * (t3 + t1);
     const float q = N_pos + x * (rho + t4);
 
     float x_n = get_root_newton_raphson(m, n, p, q);
@@ -215,9 +240,9 @@ __kernel void chem_step(__global const float *nh, __global float *wn,
     const float L = cooling_rate_density(T, rho, x_n);
     const float H = heating_rate(rho, x, x_n, N_pos, al_i);
 
-    const float coef = 2.F * (H - L) * DT / (3.F * rho * (1.F + x_n) * kB);
-    float T_n = (coef + T) / (1 + x_n - x);
-    T_n = max(T_n, 10.F);
+    const float coef = 2. * (H - L) * DT / (3. * rho * (1. + x_n) * kB);
+    float T_n = (coef + T) / (1. + x_n - x);
+    T_n = max(T_n, 10.);
 
     // Compute new N (N_n)
     const float t5 = x_n * x_n;
