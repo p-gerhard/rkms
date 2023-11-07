@@ -1,12 +1,16 @@
 #ifndef _CHEMISTRY_CL
 #define _CHEMISTRY_CL
 
+#pragma OPENCL EXTENSION cl_khr_fp64 : enable
+
 // Light Speed
 #define LIGHT_SPEED 299792458.F
 
-float gamma_h0(const float T)
+typedef double real_t;
+
+real_t gamma_h0(const real_t T)
 {
-    float res = 5.85e-11F;
+    real_t res = 5.85e-11F;
     res *= sqrt(T);
     res *= 1.0F / (1.0F + sqrt(T / 1.e5F));
     res *= exp(-157809.1F / T);
@@ -14,125 +18,135 @@ float gamma_h0(const float T)
     return res;
 }
 
-float alpha_ah(const float T)
+real_t gamma_h0_opt(const real_t T)
 {
-    float lambda = 2.0F * 157807.0F / T;
-    float res = 1.269e-13F;
-    res *= pow(lambda, 1.503F);
-    res /= pow(1.0F + pow(lambda / 0.522F, 0.47F), 1.923F);
+    real_t t0 = -37.37750491965501150289710039036636229079507786927246280283;
+    real_t t1 = 0.0031622776601683793319988935444327185337195551393252168268;
+    real_t t2 = t1 + rsqrt(T);
+    real_t t3 = exp(t0 - 157809.1 / T);
+
+    return t3 / t2;
+}
+
+real_t alpha_ah(const real_t T)
+{
+    real_t lambda = 2.0 * 157807.0 / T;
+    real_t res = 1.269e-13;
+    res *= pow(lambda, 1.503);
+    res /= pow(1.0 + pow(lambda / 0.522, 0.47), 1.923);
     res *= 1e-6F; // to cube meter
     return res;
 }
 
-float recombination_cooling_rate_ah(const float T)
+real_t recombination_cooling_rate_ah(const real_t T)
 {
-    float lambda = 2.0F * 157807.0F / T;
-    float res = 1.778e-29F * pow(lambda, 1.965F);
-    res /= pow(1.0F + pow(lambda / 0.541F, 0.502F), 2.697F);
-    res *= 1e-6F; // to cube meter
-    res *= 1e-7F; // to cube joule
+    real_t lambda = 2.0 * 157807.0 / T;
+    real_t res = 1.778e-29 * pow(lambda, 1.965);
+    res /= pow(1.0 + pow(lambda / 0.541, 0.502), 2.697);
+    res *= 1e-6; // to cube meter
+    res *= 1e-7; // to cube joule
     return res;
 }
 
-float alpha_bh(const float T)
+real_t alpha_bh(const real_t T)
 {
-    float lambda = 2.0F * 157807.0F / T;
-    float res = 2.753e-14F;
-    res *= pow(lambda, 1.5F);
-    res /= pow(1.0F + pow(lambda / 2.74F, 0.407F), 2.242F);
+    real_t lambda = 2.0 * 157807.0 / T;
+    real_t res = 2.753e-14;
+    res *= pow(lambda, 1.5);
+    res /= pow(1.0 + pow(lambda / 2.74, 0.407), 2.242);
     res *= 1e-6F; // to cube meter
     return res;
 }
 
-float beta_h(const float T)
+real_t beta_h(const real_t T)
 {
-    float lambda = 2.0F * 157807.0F / T;
-    float res =
-        21.11F * pow(T, -1.5F) * exp(-lambda / 2.0F) * pow(lambda, -1.089F);
-    res /= pow(1.0F + pow(lambda / 0.354F, 0.874F), 1.01F);
-    res *= 1e-6F; // to cube meter
+    real_t lambda = 2.0 * 157807.0 / T;
+    real_t res =
+        21.11 * pow(T, -1.5) * exp(-lambda / 2.0) * pow(lambda, -1.089);
+    res /= pow(1.0 + pow(lambda / 0.354, 0.874), 1.01);
+    res *= 1e-6; // to cube meter
     return res;
 }
 
 // Collisional ionisation cooling
-float ksi_h0(const float T)
+real_t ksi_h0(const real_t T)
 {
-    float res = 1.27e-21F * sqrt(T) / (1.0F + sqrt(T / 1.e5F));
-    res *= exp(-157809.1F / T);
-    res *= 1e-6F; // to cube meter
-    res *= 1e-7F; // to cube joule
+    real_t res = 1.27e-21 * sqrt(T) / (1.0 + sqrt(T / 1.e5));
+    res *= exp(-157809.1 / T);
+    res *= 1e-6; // to cube meter
+    res *= 1e-7; // to cube joule
     return res;
 }
 
 // Recombination cooling
-float eta_h0(const float T)
+real_t eta_h0(const real_t T)
 {
-    float res = 8.7e-27F * sqrt(T) * pow(T / 1.e3F, -0.2F) /
-                (1.0F + pow(T / 1.e6F, 0.7F));
-    res *= 1e-6F; // to cube meter
-    res *= 1e-7F; // to cube joule
+    real_t res =
+        8.7e-27 * sqrt(T) * pow(T / 1.e3, -0.2) / (1.0 + pow(T / 1.e6, 0.7));
+    res *= 1e-6; // to cube meter
+    res *= 1e-7; // to cube joule
     return res;
 }
 
 // Collisional excitation cooling
-float psi_h0(const float T)
+real_t psi_h0(const real_t T)
 {
-    float res = 7.5e-19F / (1.0F + sqrt(T / 1.e5F));
-    res *= exp(-118348.0F / T);
-    res *= 1e-6F; // to cube meter
-    res *= 1e-7F; // to cube joule
+    real_t res = 7.5e-19 / (1.0 + sqrt(T / 1.e5));
+    res *= exp(-118348.0 / T);
+    res *= 1e-6; // to cube meter
+    res *= 1e-7; // to cube joule
     return res;
 }
 
-float beta_bremsstrahlung(const float T)
+real_t beta_bremsstrahlung(const real_t T)
 {
-    float res = 1.42e-27F * sqrt(T);
-    res *= 1e-6F; // to cube meter
-    res *= 1e-7F; // to cube joule
+    real_t res = 1.42e-27 * sqrt(T);
+    res *= 1e-6; // to cube meter
+    res *= 1e-7; // to cube joule
     return res;
 }
 
 // Gives result in erg cm^3 s⁻1
 // Multiply by rho^2
 
-float cooling_rate(const float T, const float x)
+real_t cooling_rate(const real_t T, const real_t x)
 {
-    const float t0 = x * x;
-    const float t1 = 1.0F - x;
-    const float t2 = t1 * t1;
-    float res = (beta_bremsstrahlung(T) + eta_h0(T)) * t0 +
-                (psi_h0(T) + ksi_h0(T)) * t2;
+    const real_t t0 = x * x;
+    const real_t t1 = 1.0 - x;
+    const real_t t2 = t1 * t1;
+    real_t res = (beta_bremsstrahlung(T) + eta_h0(T)) * t0 +
+                 (psi_h0(T) + ksi_h0(T)) * t2;
     return res;
 }
 
-float cooling_rate_density(const float T, const float rho, const float x_n)
+real_t cooling_rate_density(const real_t T, const real_t rho, const real_t x_n)
 {
-    const float t0 = rho * x_n;
-    const float t1 = t0 * t0;
-    const float t2 = t0 * rho - t1;
+    const real_t t0 = rho * x_n;
+    const real_t t1 = t0 * t0;
+    const real_t t2 = t0 * rho - t1;
 
     return (beta_bremsstrahlung(T) + eta_h0(T)) * t1 +
            (psi_h0(T) + ksi_h0(T)) * t2;
 }
 
-float heating_rate(const float rho, const float x, const float x_n,
-                   const float N, const float al_i)
+real_t heating_rate(const real_t rho, const real_t x, const real_t x_n,
+                    const real_t N, const real_t al_i)
 {
-    const float e = (20.28F - 13.6F) * 1.60218e-19F;
+    const real_t e = (20.28 - 13.6) * 1.60218e-19;
     // Short time step
     return rho * (1 - x_n) * N * al_i * e * LIGHT_SPEED;
 }
 
 // TODO: FUNCTION IS NOT SAFE !!!!!!!!!
-float get_root_newton_raphson(const float a, const float b, const float c,
-                              const float d)
+real_t get_root_newton_raphson(const real_t a, const real_t b, const real_t c,
+                               const real_t d)
 {
-    const float eps = 1e-6F;
+    const real_t eps = 1e-6;
 
-    float x = 0.5F;
-    float res = 1.0;
+    real_t x = 0.5;
+    real_t res = 1.0;
 
-    float f, df, t2, t3;
+    real_t f, df, t2, t3;
 
     while (fabs(res) >= eps) {
         // Intermediate variables
