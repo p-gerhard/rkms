@@ -188,7 +188,7 @@ if __name__ == "__main__":
     )
 
     # Build solver
-    s = FVSolverCl(
+    s = AstroFVSolverCL(
         filename=filename,
         model=m,
         time_mode=FVTimeMode.FORCE_ITERMAX_FROM_CFL,

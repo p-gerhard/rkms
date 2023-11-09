@@ -11,15 +11,8 @@
 #define SRC_VACCUM (0.f)
 #endif
 
-static inline void pn_src_null(const real_t t, const real_t x[DIM], real_t w[M])
-{
-    for (int k = 0; k < M; k++) {
-        w[k] = SRC_VACCUM;
-    }
-}
-
-static inline void pn_src_gaussian_line_source(const real_t t,
-                                               const real_t x[DIM], real_t w[M])
+static void tp_src_gaussian_line_source(const real_t t, const real_t x[DIM],
+                                        real_t w[M])
 {
 #ifdef IS_2D
     const real_t d =
@@ -31,9 +24,7 @@ static inline void pn_src_gaussian_line_source(const real_t t,
 #endif
 
     const real_t omega2 = SRC_OMEGA * SRC_OMEGA;
-    const real_t gauss = exp(SRC_SIGMA * d / (omega2));
-
-    pn_src_null(t, x, w);
+    const real_t gauss = exp(SRC_SIGMA * d / omega2);
 
     w[0] = max(gauss, SRC_VACCUM);
 }

@@ -88,7 +88,7 @@ class FVTimeData:
 
         # Compute dt and iter_max
         self.dt = self._compute_dt()
-        self.iter_max = self._compute_iter_max(self)
+        self.iter_max = self._compute_iter_max()
 
         # Compute tmax discrepency using current dt
         diff_tmax = self.tmax - self.iter_max * self.dt
@@ -107,11 +107,11 @@ class FVTimeData:
         assert abs(self.tmax - self.dt * self.iter_max) < np.finfo(self.dtype).eps
 
         # Adjust CFL using the final dt
-        self.cfl = self._compute_cfl(self.dt, self.hmin)
+        self.cfl = self._compute_cfl()
 
     def _force_tmax_from_cfl(self):
         assert self.cfl >= 0.0
-        self.dt = self._compute_dt(self.cfl, self.hmin)
+        self.dt = self._compute_dt()
         self._force_tmax()
 
     def _force_tmax_from_dt(self):
