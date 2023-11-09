@@ -1,0 +1,108 @@
+#ifndef NUMFLUX_M1_CL
+#define NUMFLUX_M1_CL
+
+#define C_WAWE_POW_2 (C_WAVE * C_WAVE)
+
+inline static float get_r(const real_t rho, const real_t norm)
+{
+#ifdef USE_DOUBLE
+    const double t0 = 1. / (max(rho, DBL_EPSILON) * C_WAVE);
+#else
+    const float t0 = 1.f / (max(rho, FLT_EPSILON) * C_WAVE);
+#endif
+    return norm * t0;
+}
+
+inline real_t get_chi(const real_t r)
+{
+    const real_t t0 = r * r;
+
+#ifdef USE_DOUBLE
+    const double chi = (3. + 4. * t0) / (5. + 2. * sqrt(4. - 3. * t0));
+#else
+    const float chi = (3.f + 4.f * t0) / (5.f + 2.f * sqrt(4.f - 3.f * t0));
+#endif
+    return chi;
+}
+
+inline void safe_normalise(const real_t u[3], real_t un[3], real_t *norm)
+{
+    const real_t t0 = sqrt(u[0] * u[0] + u[1] * u[1] + u[2] * u[2]);
+
+#ifdef USE_DOUBLE
+    const double t1 = 1. / max(t0, DBL_EPSILON);
+#else
+    const float t1 = 1.f / max(t0, FLT_EPSILON);
+#endif
+    un[0] = u[0] * t1;
+    un[1] = u[1] * t1;
+    un[2] = u[2] * t1;
+
+    *norm = t0;
+}
+
+void phy_flux(const real_t wn[4], const real_t vn[3], real_t flux[4])
+{
+    real_t norm;
+
+    const real_t u[3] = { wn[1], wn[2], wn[3] };
+    real_t un[3];
+    // Normalized intensity vector In
+    safe_normalise(u, un, &norm);
+
+    /* Get closure value */
+    const real_t r = get_r(wn[0], norm);
+    // printf("%f\n, ", r);
+    const real_t chi = get_chi(r);
+
+#ifdef USE_DOUBLE
+    const real_t t1 = 0.5 * (1. - chi);
+    const real_t t2 = 0.5 * (3. * chi - 1.);
+#else
+    const real_t t1 = 0.5f * (1.f - chi);
+    const real_t t2 = 0.5f * (3.f * chi - 1.f);
+#endif
+
+    // Diagonal terms
+    const real_t Pxx = wn[0] * (t1 + t2 * un[0] * un[0]);
+    const real_t Pyy = wn[0] * (t1 + t2 * un[1] * un[1]);
+    const real_t Pzz = wn[0] * (t1 + t2 * un[2] * un[2]);
+
+    // Off diagonal terms : Pxy = Pyz, Pxz = Pzx, Pyz = Pzy
+    const real_t Pxy = wn[0] * t2 * un[0] * un[1];
+    const real_t Pxz = wn[0] * t2 * un[0] * un[2];
+    const real_t Pyz = wn[0] * t2 * un[1] * un[2];
+
+    flux[0] = C_WAWE_POW_2 * (wn[1] * vn[0] + wn[2] * vn[1] + wn[3] * vn[2]);
+    flux[1] = C_WAWE_POW_2 * (Pxx * vn[0] + Pxy * vn[1] + Pxz * vn[2]);
+    flux[2] = C_WAWE_POW_2 * (Pxy * vn[0] + Pyy * vn[1] + Pyz * vn[2]);
+    flux[3] = C_WAWE_POW_2 * (Pxz * vn[0] + Pyz * vn[1] + Pzz * vn[2]);
+}
+
+void m1_num_flux_rusanov(const real_t wL[4], const real_t wR[4],
+                         const real_t vn[3], real_t flux[4])
+{
+    real_t fL[4];
+    real_t fR[4];
+
+    phy_flux(wL, vn, fL);
+    phy_flux(wR, vn, fR);
+
+#ifdef USE_DOUBLE
+    const double t0 = 0.5;
+#else
+    const float t0 = 0.5f;
+#endif
+
+    flux[0] = t0 * ((fL[0] + fR[0]) - C_WAVE * (wR[0] - wL[0]));
+    flux[1] = t0 * ((fL[1] + fR[1]) - C_WAVE * (wR[1] - wL[1]));
+    flux[2] = t0 * ((fL[2] + fR[2]) - C_WAVE * (wR[2] - wL[2]));
+    flux[3] = t0 * ((fL[3] + fR[3]) - C_WAVE * (wR[3] - wL[3]));
+
+    // flux[0] = 0.;
+    // flux[1] = 0.;
+    // flux[2] = 0.;
+    // flux[3] = 0.;
+}
+
+#endif

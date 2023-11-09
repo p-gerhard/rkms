@@ -110,7 +110,7 @@ class AstroFVSolverCL(FVSolverCl):
         with meshio.xdmf.TimeSeriesWriter(self.export_data_file) as writer:
             # Export mesh
             writer.write_points_cells(
-                self.mesh.nodes, [(self.mesh.cell_name, self.mesh.cells)]
+                self.mesh.points, [(self.mesh.cell_name, self.mesh.cells)]
             )
 
             # Export solution at t=0
@@ -163,10 +163,10 @@ class AstroFVSolverCL(FVSolverCl):
 
 if __name__ == "__main__":
     # Physical dimension of PN approximation
-    dim = 2
+    dim = 3
 
     # Order of PN approximation
-    order = 11
+    order = 5
 
     # Load mesh file
     if dim == 2:
@@ -195,7 +195,7 @@ if __name__ == "__main__":
         tmax=1,
         cfl=0.9,
         dt=None,
-        iter_max=100,
+        iter_max=4000,
         use_muscl=True,
         export_idx=[0, 1, 2],
         export_frq=40,
