@@ -82,8 +82,19 @@ class SolverCl(ABC):
             src = f.read()
 
         # Inject values into the OpenCL source using replace_maps
+        if self.use_double:
+            fmt = ".15f"
+            suffix = ""
+        else:
+            fmt = ".8f"
+            suffix = "f"
+
         for key, val in self.cl_replace_map.items():
-            val_fmt = f"({val:f}f)" if isinstance(val, np.float32) else f"({val})"
+            val_fmt = (
+                f"({val:{fmt}}{suffix})"
+                if isinstance(val, np.float32) or isinstance(val, np.float64)
+                else f"({val})"
+            )
             src = src.replace("{}".format(key), val_fmt)
 
         # Create OpenCL program

@@ -46,7 +46,7 @@ static const int h8_face_to_loc_node[H8_FACE_PER_ELEM][H8_NODE_PER_FACE] = {
     {0, 3, 2, 1}, // South
 };
 
-static const float h8_face_normals[H8_FACE_PER_ELEM][3] = {
+static const double h8_face_normals[H8_FACE_PER_ELEM][3] = {
     { 1,  0,  0}, // Right
     {-1,  0,  0}, // Left
     { 0,  1,  0}, // Front
@@ -90,8 +90,8 @@ static void check_perror(bool condition, const std::string &func_name,
  * @param n1_idx Index of the second node in the `nodes` array.
  * @param vec Array to store the computed vector.
  */
-static inline void get_vector(const float nodes[H8_NODE_PER_ELEM * 3],
-                              int n0_idx, int n1_idx, float vec[3])
+static inline void get_vector(const double nodes[H8_NODE_PER_ELEM * 3],
+                              int n0_idx, int n1_idx, double vec[3])
 {
     vec[0] = nodes[3 * n1_idx + 0] - nodes[3 * n0_idx + 0];
     vec[1] = nodes[3 * n1_idx + 1] - nodes[3 * n0_idx + 1];
@@ -105,7 +105,7 @@ static inline void get_vector(const float nodes[H8_NODE_PER_ELEM * 3],
  * @param y Array containing the coordinates of the second vector.
  * @return The dot product of the two vectors.
  */
-static inline float dot_product(const float x[3], const float y[3])
+static inline double dot_product(const double x[3], const double y[3])
 {
     return x[0] * y[0] + x[1] * y[1] + x[2] * y[2];
 }
@@ -116,7 +116,7 @@ static inline float dot_product(const float x[3], const float y[3])
  * @param x Array containing the coordinates of the vector.
  * @return The Euclidean norm of the vector.
  */
-static inline float norm(const float x[3])
+static inline double norm(const double x[3])
 {
     return sqrt(x[0] * x[0] + x[1] * x[1] + x[2] * x[2]);
 }
@@ -128,8 +128,8 @@ static inline float norm(const float x[3])
  * @param y Array containing the coordinates of the second vector.
  * @param res Array to store the resulting cross product.
  */
-static inline void cross_product(const float x[3], const float y[3],
-                                 float res[3])
+static inline void cross_product(const double x[3], const double y[3],
+                                 double res[3])
 {
     res[0] = x[1] * y[2] - x[2] * y[1];
     res[1] = x[2] * y[0] - x[0] * y[2];
@@ -144,14 +144,14 @@ static inline void cross_product(const float x[3], const float y[3],
  * the cell.
  * @param node_ids Array containing the IDs of the nodes composing the cell.
  */
-static inline void h8_lexsort(float node_coords[H8_NODE_PER_ELEM * H8_PHY_DIM],
+static inline void h8_lexsort(double node_coords[H8_NODE_PER_ELEM * H8_PHY_DIM],
                               long node_ids[H8_NODE_PER_ELEM])
 {
     // Macro to swap the coordinates and IDs of two nodes
 #define SWAP_NODE(i, j)                                                        \
-    const float tmp_x = node_coords[3 * i + 0];                                \
-    const float tmp_y = node_coords[3 * i + 1];                                \
-    const float tmp_z = node_coords[3 * i + 2];                                \
+    const double tmp_x = node_coords[3 * i + 0];                               \
+    const double tmp_y = node_coords[3 * i + 1];                               \
+    const double tmp_z = node_coords[3 * i + 2];                               \
     node_coords[3 * i + 0] = node_coords[3 * j + 0];                           \
     node_coords[3 * i + 1] = node_coords[3 * j + 1];                           \
     node_coords[3 * i + 2] = node_coords[3 * j + 2];                           \
@@ -223,8 +223,8 @@ static inline void h8_lexsort(float node_coords[H8_NODE_PER_ELEM * H8_PHY_DIM],
  *          adjacent nodes of each hexahedral face. It also verifies the edge
  *          lengths and the direction of the computed normals for each face.
  */
-static bool h8_check_normals(float node_coords[H8_NODE_PER_ELEM * H8_PHY_DIM],
-                             const float sizes[H8_PHY_DIM])
+static bool h8_check_normals(double node_coords[H8_NODE_PER_ELEM * H8_PHY_DIM],
+                             const double sizes[H8_PHY_DIM])
 {
     bool check = true;
     for (int id_face = 0; id_face < H8_FACE_PER_ELEM; id_face++) {
@@ -232,7 +232,7 @@ static bool h8_check_normals(float node_coords[H8_NODE_PER_ELEM * H8_PHY_DIM],
         long n1 = h8_face_to_loc_node[id_face][1];
         long n2 = h8_face_to_loc_node[id_face][2];
 
-        float e0[H8_PHY_DIM], e1[H8_PHY_DIM];
+        double e0[H8_PHY_DIM], e1[H8_PHY_DIM];
         // Compute vector from node (n0) to node (n1)
         get_vector(node_coords, n0, n1, e0);
 
@@ -240,12 +240,12 @@ static bool h8_check_normals(float node_coords[H8_NODE_PER_ELEM * H8_PHY_DIM],
         get_vector(node_coords, n1, n2, e1);
 
         // Check orthogonality between vectors composing the face
-        const float e0_dot_e1 = dot_product(e0, e1);
+        const double e0_dot_e1 = dot_product(e0, e1);
         check = check && (fabs(e0_dot_e1) < MESH_TOL);
 
         // Check both edge lengths
-        const float e0_ln = norm(e0);
-        const float e1_ln = norm(e1);
+        const double e0_ln = norm(e0);
+        const double e1_ln = norm(e1);
 
         int edge_len_id = h8_face_edge_len[id_face][0];
         check = (check && (fabs(e0_ln - sizes[edge_len_id]) < MESH_TOL));
@@ -258,13 +258,13 @@ static bool h8_check_normals(float node_coords[H8_NODE_PER_ELEM * H8_PHY_DIM],
 
         assert(check);
         // Check normal direction to the face
-        float n[H8_PHY_DIM];
-        float a = (e0_ln * e1_ln);
+        double n[H8_PHY_DIM];
+        double a = (e0_ln * e1_ln);
         cross_product(e0, e1, n);
 
-        const float n_ref[H8_PHY_DIM] = { h8_face_normals[id_face][0],
-                                          h8_face_normals[id_face][1],
-                                          h8_face_normals[id_face][2] };
+        const double n_ref[H8_PHY_DIM] = { h8_face_normals[id_face][0],
+                                           h8_face_normals[id_face][1],
+                                           h8_face_normals[id_face][2] };
 
         check = check && (fabs(n_ref[0] - n[0] / a) < MESH_TOL);
         check = check && (fabs(n_ref[1] - n[1] / a) < MESH_TOL);
@@ -286,7 +286,8 @@ static bool h8_check_normals(float node_coords[H8_NODE_PER_ELEM * H8_PHY_DIM],
  * mesh.
  * @param sizes Array containing the found cell sizes (dx, dy, dz).
  */
-void mesh_h8_extract_cell_size(const float *nodes, long *cells, float sizes[3])
+void mesh_h8_extract_cell_size(const double *nodes, long *cells,
+                               double sizes[3])
 {
     // Step 1: Load the first cell's node IDs (H8_NODE_PER_ELEM first node IDs)
     long loc_cell_nodes_id[H8_NODE_PER_ELEM];
@@ -295,13 +296,15 @@ void mesh_h8_extract_cell_size(const float *nodes, long *cells, float sizes[3])
     }
 
     // Step 2: Load the coordinates of the first cell's nodes
-    float loc_nodes[H8_NODE_PER_ELEM * H8_PHY_DIM];
+    double loc_nodes[H8_NODE_PER_ELEM * H8_PHY_DIM];
     for (int i = 0; i < H8_NODE_PER_ELEM; i++) {
         long id_node = loc_cell_nodes_id[i];
         for (int k = 0; k < H8_PHY_DIM; k++) {
             loc_nodes[H8_PHY_DIM * i + k] = nodes[H8_PHY_DIM * id_node + k];
         }
     }
+
+
 
     /**
 	 * Note: The following steps are intended to address the issue of node ID
@@ -349,7 +352,7 @@ void mesh_h8_extract_cell_size(const float *nodes, long *cells, float sizes[3])
         {2, 6}
     };
 
-    float v[3], dx[4], dy[4], dz[4];
+    double v[3], dx[4], dy[4], dz[4];
 
     // Computing length of each H8 edges
     for (int k = 0; k < 4; k++) {
@@ -397,11 +400,12 @@ void mesh_h8_extract_cell_size(const float *nodes, long *cells, float sizes[3])
  * @param cells_center The array to store the computed cell centers of all the
  * cells.
  */
-void mesh_h8_process_cells(const long nb_cells, const float sizes[3],
-                           const float *nodes, long *cells, float *cells_center)
+void mesh_h8_process_cells(const long nb_cells, const double sizes[3],
+                           const double *nodes, long *cells,
+                           double *cells_center)
 {
     long loc_cell_nodes_id[H8_NODE_PER_ELEM];
-    float loc_nodes[H8_NODE_PER_ELEM * H8_PHY_DIM];
+    double loc_nodes[H8_NODE_PER_ELEM * H8_PHY_DIM];
 
     for (long id_cell = 0; id_cell < nb_cells; id_cell++) {
         // Step 1: Load the cell's node IDs
@@ -440,9 +444,9 @@ void mesh_h8_process_cells(const long nb_cells, const float sizes[3],
         // Step 4: Re-order inplace from the lexical order to the proper Q8
         // order Take advantage to compute sum for later cells centers
         // computation
-        float sum_x = 0.f;
-        float sum_y = 0.f;
-        float sum_z = 0.f;
+        double sum_x = 0;
+        double sum_y = 0;
+        double sum_z = 0;
 
         for (int i = 0; i < H8_NODE_PER_ELEM; i++) {
             long id_node = cells[H8_NODE_PER_ELEM * id_cell + i];
@@ -464,13 +468,13 @@ void mesh_h8_process_cells(const long nb_cells, const float sizes[3],
 
         // Setp 6: Compute cell's center coordinates using true hexahedron
         // formula
-        const float center_1[3] = { sum_x / 8.f, sum_y / 8.f, sum_z / 8.f };
+        const double center_1[3] = { sum_x / 8, sum_y / 8, sum_z / 8 };
 
         // Step 7: Compute cell's centers coordinates using displacement from
         // first cell's node
-        const float center_2[3] = { loc_nodes[0] + 0.5f * sizes[0],
-                                    loc_nodes[1] + 0.5f * sizes[1],
-                                    loc_nodes[2] + 0.5f * sizes[2] };
+        const double center_2[3] = { loc_nodes[0] + 0.5 * sizes[0],
+                                     loc_nodes[1] + 0.5 * sizes[1],
+                                     loc_nodes[2] + 0.5 * sizes[2] };
 
         // Step 8: Verify that both values are same
         check = check && (fabs(center_1[0] - center_2[0]) < MESH_TOL);
@@ -509,16 +513,16 @@ void mesh_h8_process_cells(const long nb_cells, const float sizes[3],
  *       `nodes[H8_PHY_DIM * i + j]`, where `j` is the coordinate index (0, 1,
  *       2).
  */
-void mesh_h8_process_nodes(const long nb_nodes, const float sizes[3],
-                           float *nodes)
+void mesh_h8_process_nodes(const long nb_nodes, const double sizes[3],
+                           double *nodes)
 {
     // Calculate half cell sizes
-    const float half_dx = 0.5f * sizes[0];
-    const float half_dy = 0.5f * sizes[1];
-    const float half_dz = 0.5f * sizes[2];
+    const double half_dx = 0.5 * sizes[0];
+    const double half_dy = 0.5 * sizes[1];
+    const double half_dz = 0.5 * sizes[2];
 
     // Process each node
-    float old_coord[H8_PHY_DIM];
+    double old_coord[H8_PHY_DIM];
     bool check = true;
 
     for (long id_node = 0; id_node < nb_nodes; id_node++) {
@@ -528,11 +532,11 @@ void mesh_h8_process_nodes(const long nb_nodes, const float sizes[3],
         old_coord[2] = nodes[H8_PHY_DIM * id_node + 2];
 
         // Round the x, y and z coordinates
-        const float x =
+        const double x =
             rint(nodes[H8_PHY_DIM * id_node + 0] / half_dx) * half_dx;
-        const float y =
+        const double y =
             rint(nodes[H8_PHY_DIM * id_node + 1] / half_dy) * half_dy;
-        const float z =
+        const double z =
             rint(nodes[H8_PHY_DIM * id_node + 2] / half_dz) * half_dz;
 
         // Update the node coordinates

@@ -6,17 +6,23 @@ import numpy as np
 import pyopencl as cl
 import pyopencl.array as cl_array
 
-from rkms.model import Model
+from rkms.model import PN
 from rkms.solver import FVSolverCl, FVTimeMode, get_progressbar
 
-# Set some env. variables to control pyopencl and nvidia platfrom behaviours
+# Configure environment variables for controlling pyopencl and NVIDIA platform
+# behaviors
+
+# Disable caching in pyopencl
 os.environ["PYOPENCL_NO_CACHE"] = "1"
+
+# Enable compiler output in pyopencl
 os.environ["PYOPENCL_COMPILER_OUTPUT"] = "1"
+
+# Disable CUDA caching
 os.environ["CUDA_CACHE_DISABLE"] = "1"
 
-# Autoselect OpenCL platform #0
+# Auto-select OpenCL platform #0
 os.environ["PYOPENCL_CTX"] = "0"
-
 
 ################################################################################
 # Astro - FVSolverCL for chemistry
@@ -32,13 +38,13 @@ class AstroFVSolverCL(FVSolverCl):
         size = self.mesh.nb_cells
 
         # Set host buffer storing hydrogen density values at t_n
-        self.nh_h = np.empty(size, dtype=np.float32)
+        self.nh_h = np.empty(size, dtype=self.dtype)
 
         # Set host buffer storing temperature values at t_n
-        self.temp_h = np.empty(size, dtype=np.float32)
+        self.temp_h = np.empty(size, dtype=self.dtype)
 
         # Set host buffer storing neutral fraction values at t_n
-        self.xi_h = np.empty(size, dtype=np.float32)
+        self.xi_h = np.empty(size, dtype=self.dtype)
 
     def _dalloc(self, ocl_queue):
         # Solver host buffers are allocated by FVSolverCl class
@@ -48,13 +54,13 @@ class AstroFVSolverCL(FVSolverCl):
         size = self.mesh.nb_cells
 
         # Set device buffer storing hydrogen density values at t_n
-        self.nh_d = cl_array.empty(ocl_queue, size, dtype=np.float32)
+        self.nh_d = cl_array.empty(ocl_queue, size, dtype=self.dtype)
 
         # Set device buffer storing temperature values at t_n
-        self.temp_d = cl_array.empty(ocl_queue, size, dtype=np.float32)
+        self.temp_d = cl_array.empty(ocl_queue, size, dtype=self.dtype)
 
         # Set device buffer storing neutral fraction values at t_n
-        self.xi_d = cl_array.empty(ocl_queue, size, dtype=np.float32)
+        self.xi_d = cl_array.empty(ocl_queue, size, dtype=self.dtype)
 
     # TODO: Rewrite _init_sol
     def _init_sol(self, ocl_queue, ocl_prg) -> None:
@@ -99,7 +105,7 @@ class AstroFVSolverCL(FVSolverCl):
     def _solve(self, ocl_queue, ocl_prg) -> None:
         # Set OpenCL Kernel scalar arguments
         time_step = ocl_prg.solver_time_step
-        time_step.set_scalar_arg_dtypes([np.float32, None, None, None, None])
+        time_step.set_scalar_arg_dtypes([self.dtype, None, None, None, None])
 
         with meshio.xdmf.TimeSeriesWriter(self.export_data_file) as writer:
             # Export mesh
@@ -155,139 +161,34 @@ class AstroFVSolverCL(FVSolverCl):
                 )
 
 
-################################################################################
-# GENERIC PN MODEL
-################################################################################
-
-
-# Declare generic PN model using inheritance
-class PN(Model):
-    def __init__(self, order: int, dim: int):
-        super().__init__(
-            order,
-            dim,
-            cl_build_opts=[
-                "-D IS_SPHERICAL_HARMONICS_MODELS",
-                "-D USE_SPHERICAL_HARMONICS_P{order}".format(order=order),
-                "-cl-fast-relaxed-math",
-            ],
-            cl_src_file="./cl/astro/pn/pn.cl",
-            cl_include_dirs=["./cl/astro/pn"],
-        )
-
-        if dim == 2:
-            self.m = int((order * order / 2.0) + (3.0 * order / 2.0) + 1.0)
-        else:
-            self.m = int((order + 1.0) * (order + 1.0))
-
-
-################################################################################
-# AVAILABLE PN MODELS - DIM 2
-################################################################################
-
-
-# Declare generic PND2 model using inheritance
-class PND2(PN):
-    def __init__(self, order: int):
-        super().__init__(order, dim=2)
-
-
-# Declare model PN Dim=2, Order=1
-class P1D2(PND2):
-    def __init__(self) -> None:
-        super().__init__(order=1)
-
-
-# Declare model PN Dim=2, Order=3
-class P3D2(PND2):
-    def __init__(self) -> None:
-        super().__init__(order=3)
-
-
-# Declare model PN Dim=2, Order=5
-class P5D2(PND2):
-    def __init__(self) -> None:
-        super().__init__(order=5)
-
-
-# Declare model PN Dim=2, Order=7
-class P7D2(PND2):
-    def __init__(self) -> None:
-        super().__init__(order=7)
-
-
-# Declare model PN Dim=2, Order=9
-class P9D2(PND2):
-    def __init__(self) -> None:
-        super().__init__(order=9)
-
-
-# Declare model PN Dim=2, Order=11
-class P11D2(PND2):
-    def __init__(self) -> None:
-        super().__init__(order=11)
-
-
-################################################################################
-# AVAILABLE PN MODELS - DIM 3
-################################################################################
-
-
-# Declare generic PND2 model using inheritance
-class PND3(PN):
-    def __init__(self, order: int):
-        super().__init__(order, dim=3)
-
-
-# Declare model PN Dim=3, Order=1
-class P1D3(PND3):
-    def __init__(self) -> None:
-        super().__init__(order=1)
-
-
-# Declare model PN Dim=3, Order=3
-class P3D3(PND3):
-    def __init__(self) -> None:
-        super().__init__(order=3)
-
-
-# Declare model PN Dim=3, Order=5
-class P5D3(PND3):
-    def __init__(self) -> None:
-        super().__init__(order=5)
-
-
-# Declare model PN Dim=3, Order=7
-class P7D3(PND3):
-    def __init__(self) -> None:
-        super().__init__(order=7)
-
-
-# Declare model PN Dim=3, Order=9
-class P9D3(PND3):
-    def __init__(self) -> None:
-        super().__init__(order=9)
-
-
-# Declare model PN Dim=3, Order=11
-class P11D3(PND3):
-    def __init__(self) -> None:
-        super().__init__(order=11)
-
-
 if __name__ == "__main__":
-    solve_d2 = False
+    # Physical dimension of PN approximation
+    dim = 2
 
-    if solve_d2:
-        m = P5D2()
-        # filename = "./meshes/q4_unit_square_nx2_ny2.msh"
-        # filename = "./meshes/q4_unit_square_nx1024_ny1024.msh"
+    # Order of PN approximation
+    order = 11
+
+    # Load mesh file
+    if dim == 2:
+        filename = "./meshes/unit_square_nx64_ny64.msh"
     else:
-        m = P1D3()
         filename = "./meshes/unit_cube_nx100_ny100_nz100.msh"
-        # filename = "./meshes/unit_cube_nx8_ny8_nz8.msh"
 
-    s = AstroFVSolverCL(
+    # Build PN Model
+    m = PN(
+        order,
+        dim,
+        cl_src_file="./cl/astro/pn/main.cl",
+        cl_include_dirs=["./cl/astro/pn"],
+        cl_build_opts=[
+            f"-D USE_SPHERICAL_HARMONICS_P{order}",
+            "-cl-fast-relaxed-math",
+        ],
+        cl_replace_map={},
+    )
+
+    # Build solver
+    s = FVSolverCl(
         filename=filename,
         model=m,
         time_mode=FVTimeMode.FORCE_ITERMAX_FROM_CFL,
@@ -298,6 +199,8 @@ if __name__ == "__main__":
         use_muscl=True,
         export_idx=[0, 1, 2],
         export_frq=40,
+        use_double=True,
     )
 
+    # Run solver
     s.run()

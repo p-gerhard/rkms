@@ -1,3 +1,3 @@
-from .mesh import MeshStructured, H8_ELEM, Q4_ELEM
+from ._mesh import MeshStructured
 
-__all__ = ["MeshStructured", "H8_ELEM", "Q4_ELEM"]
+__all__ = ["MeshStructured"]

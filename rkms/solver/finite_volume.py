@@ -30,10 +30,6 @@ logging.basicConfig(
 )
 
 
-# Floating poing precision of np.float32
-CLOSE_TOL = np.MachAr(float_conv=np.float32).eps
-
-
 class FVTimeMode(Enum):
     FORCE_TMAX_FROM_CFL = 0
     FORCE_TMAX_FROM_DT = 1
@@ -47,22 +43,17 @@ class FVTimeMode(Enum):
 
 
 class FVTimeData:
-    def __init__(
-        self,
-        time_mode: FVTimeMode,
-        hmin: np.float32 | None,
-        tmax: np.float32 | None = None,
-        dt: np.float32 | None = None,
-        cfl: np.float32 | None = None,
-        iter_max: np.int32 | None = None,
-    ):
+    def __init__(self, time_mode, hmin, tmax, dt, cfl, iter_max, dtype=np.float32):
+        # Set dtype:
+        self.dtype = dtype
+
         # Set time mode
         assert isinstance(time_mode, FVTimeMode)
         self.time_mode = time_mode
 
         # Set hmin
         assert hmin >= 0.0
-        self.hmin = np.float32(hmin)
+        self.hmin = hmin
 
         self.tmax = tmax
         self.dt = dt
@@ -73,96 +64,89 @@ class FVTimeData:
         self._set_time_data()
 
         # Check CFL is coherent with dt and hmin
-        assert (
-            np.abs(self.cfl - FVTimeData._compute_cfl(self.dt, self.hmin)) < CLOSE_TOL
-        )
+        assert np.abs(self.cfl - self._compute_cfl()) < np.finfo(np.float32).eps
 
         # Check iter_max is coherent with tmax and dt
         assert (
-            np.abs(self.iter_max - FVTimeData._compute_iter_max(self.tmax, self.dt))
-            < CLOSE_TOL
+            np.abs(self.iter_max - self._compute_iter_max()) < np.finfo(self.dtype).eps
         )
 
-    @staticmethod
-    def _compute_cfl(dt: np.float32, hmin: np.float32) -> np.float32:
-        return np.float32(dt / hmin)
+    def _compute_cfl(self):
+        return self.dtype(self.dt / self.hmin)
 
-    @staticmethod
-    def _compute_dt(cfl: np.float32, hmin: np.float32) -> np.float32:
-        return np.float32(cfl * hmin)
+    def _compute_dt(self):
+        return self.dtype(self.cfl * self.hmin)
 
-    @staticmethod
-    def _compute_iter_max(tmax: np.float32, dt: np.float32) -> np.int32:
-        return np.int32(np.floor((tmax + CLOSE_TOL) / dt))
+    def _compute_iter_max(self):
+        return np.int64(np.floor((self.tmax + np.finfo(self.dtype).eps) / self.dt))
 
-    @staticmethod
-    def _compute_tmax(iter_max: np.int32, dt: np.float32) -> np.int32:
-        return np.float32(iter_max * dt)
+    def _compute_tmax(self):
+        return self.dtype(self.iter_max * self.dt)
 
-    def _force_tmax(self) -> None:
+    def _force_tmax(self):
         assert self.tmax >= 0.0
 
         # Compute dt and iter_max
-        self.dt = FVTimeData._compute_dt(self.cfl, self.hmin)
-        self.iter_max = FVTimeData._compute_iter_max(self.tmax, self.dt)
+        self.dt = self._compute_dt()
+        self.iter_max = self._compute_iter_max(self)
 
         # Compute tmax discrepency using current dt
         diff_tmax = self.tmax - self.iter_max * self.dt
 
         if self.iter_max > 0:
             # Adjust dt to make diff_time vanish
-            if diff_tmax > np.float32(0.0):
+            if diff_tmax > self.dtype(0.0):
                 self.dt += diff_tmax / self.iter_max
             else:
                 self.dt -= diff_tmax / self.iter_max
         else:
-            self.iter_max = np.int32(1)
-            self.dt = np.float32(self.tmax)
+            self.iter_max = np.int64(1)
+            self.dt = self.dtype(self.tmax)
 
         # Ensure that tmax is reach with this dt and iter_max values
-        assert abs(self.tmax - self.dt * self.iter_max) < CLOSE_TOL
+        assert abs(self.tmax - self.dt * self.iter_max) < np.finfo(self.dtype).eps
 
         # Adjust CFL using the final dt
-        self.cfl = FVTimeData._compute_cfl(self.dt, self.hmin)
+        self.cfl = self._compute_cfl(self.dt, self.hmin)
 
-    def _force_tmax_from_cfl(self) -> None:
+    def _force_tmax_from_cfl(self):
         assert self.cfl >= 0.0
-        self.dt = FVTimeData._compute_dt(self.cfl, self.hmin)
+        self.dt = self._compute_dt(self.cfl, self.hmin)
         self._force_tmax()
 
-    def _force_tmax_from_dt(self) -> None:
+    def _force_tmax_from_dt(self):
         assert self.dt >= 0.0
         self._force_tmax()
 
-    def _force_cfl(self) -> None:
+    def _force_cfl(self):
         assert self.tmax >= 0.0
         assert self.cfl >= 0.0
 
-        self.dt = FVTimeData._compute_dt(self.cfl, self.hmin)
-        self.iter_max = FVTimeData._compute_iter_max(self.tmax, self.dt)
-        self.tmax = FVTimeData._compute_tmax(self.iter_max, self.dt)
+        self.dt = self._compute_dt()
+        self.iter_max = self._compute_iter_max()
+        self.tmax = self._compute_tmax()
 
-    def _force_dt(self) -> None:
+    def _force_dt(self):
         assert self.tmax >= 0.0
         assert self.dt >= 0.0
 
-        self.cfl = FVTimeData._compute_cfl(self.dt, self.hmin)
-        self.iter_max = FVTimeData._compute_iter_max(self.tmax, self.dt)
-        self.tmax = FVTimeData._compute_tmax(self.iter_max, self.dt)
+        self.cfl = self._compute_cfl()
+        self.iter_max = self._compute_iter_max()
+        self.tmax = self._compute_tmax()
 
-    def _force_iter_max_from_cfl(self) -> None:
+    def _force_iter_max_from_cfl(self):
         assert self.iter_max >= 0
         assert self.cfl >= 0.0
 
-        self.dt = FVTimeData._compute_dt(self.cfl, self.hmin)
-        self.tmax = FVTimeData._compute_tmax(self.iter_max, self.dt)
+        self.dt = self._compute_dt()
+        self.tmax = self._compute_tmax()
 
-    def _force_iter_max_from_dt(self) -> None:
+    def _force_iter_max_from_dt(self):
         assert self.iter_max >= 0
         assert self.dt >= 0.0
 
-        self.cfl = FVTimeData._compute_cfl(self.dt, self.hmin)
-        self.tmax = FVTimeData._compute_tmax(self.iter_max, self.dt)
+        self.cfl = self._compute_cfl()
+        self.tmax = self._compute_tmax()
 
     def _set_time_data(self):
         map = {
@@ -191,33 +175,39 @@ class FVSolverCl(SolverCl):
         filename: str,
         model: Model,
         time_mode: FVTimeMode,
-        tmax: np.float32 | None = None,
-        cfl: np.float32 | None = None,
-        dt: np.float32 | None = None,
-        iter_max: np.int32 | None = None,
+        tmax,
+        cfl,
+        dt,
+        iter_max: np.int64 | None = None,
         use_muscl: bool = False,
         export_dir: str | None = None,
         export_idx: list[int] | None = None,
         export_frq: int | None = None,
+        use_double: bool = False,
         **kwargs,
     ) -> None:
         # Set mesh object
         assert isinstance(filename, str)
-        self.mesh = MeshStructured(filename)
+        self.mesh = MeshStructured(filename, use_double)
 
-        # Set mesh hmin
-        self.hmin = FVSolverCl._compute_hmin(
-            self.mesh.dim,
-            self.mesh.dx,
-            self.mesh.dy,
-            self.mesh.dz,
-        )
+        # Set float/double dtype
+        self.use_double = use_double
+        self.dtype = np.float32
+        if self.use_double:
+            self.dtype = np.float64
 
         # Set time data
-        self.time_data = FVTimeData(time_mode, self.hmin, tmax, dt, cfl, iter_max)
+        self.time_data = FVTimeData(
+            time_mode,
+            self.mesh.hmin,
+            tmax,
+            dt,
+            cfl,
+            iter_max,
+        )
 
         # Set time
-        self.t = np.float32(0.0)
+        self.t = self.dtype(0.0)
 
         # Set iteration
         self.iter = 0
@@ -269,35 +259,18 @@ class FVSolverCl(SolverCl):
         assert isinstance(use_muscl, bool)
         self.use_muscl = use_muscl
 
-    @staticmethod
-    def _compute_hmin(
-        dim: np.int32,
-        dx: np.float32,
-        dy: np.float32,
-        dz: np.float32,
-    ) -> np.float32:
-        if dim == 2:
-            cell_v = np.float32(dx * dy)
-            cell_s = np.float32(2.0 * dx + 2.0 * dy)
-
-        else:
-            cell_v = np.float32(dx * dy * dz)
-            cell_s = np.float32(2.0 * (dx * dy + dy * dz + dz * dx))
-
-        return cell_v / cell_s
-
     def _halloc(self) -> None:
         # Solution buffer size
         size = self.model.m * self.mesh.nb_cells
 
         # Host buffer storing solution values at t_n
-        self.wn_h = np.empty(size, dtype=np.float32)
+        self.wn_h = np.empty(size, dtype=self.dtype)
 
         # Reconstructed variables buffer size
         size = self.model.nb_macro_to_reconstruct * self.mesh.nb_cells
 
         # Host buffer storing eventual reconstructed variables
-        self.wn_rec_h = np.empty(size, dtype=np.float32)
+        self.wn_rec_h = np.empty(size, dtype=self.dtype)
 
     @property
     def cl_replace_map(self) -> dict:
@@ -313,26 +286,30 @@ class FVSolverCl(SolverCl):
                 "__M__": self.model.m,
                 "__NGRID__": self.mesh.nb_cells,
                 "__TMAX__": self.time_data.tmax,
+                "__C_WAVE__": 1.0,
             }
         )
         return replace_map
 
     @property
-    def cl_src_file(self) -> str:
+    def cl_src_file(self):
         return self.model.cl_src_file
 
     @property
-    def cl_include_dirs(self) -> list[str]:
+    def cl_include_dirs(self):
         return [os.path.join(os.path.dirname(os.path.abspath(__file__)), "cl")]
 
     @property
-    def cl_build_opts(self) -> list[str]:
+    def cl_build_opts(self):
         # Set solver default build options
         opts = ["-Werror", "-cl-std=CL1.2"]
 
         # Add solver defines
         if self.use_muscl:
             opts.append("-D USE_MUSCL")
+
+        if self.use_double:
+            opts.append("-D USE_DOUBLE")
 
         # Add solver include dirs
         opts += ["-I {}".format(dir) for dir in self.cl_include_dirs]
@@ -345,18 +322,18 @@ class FVSolverCl(SolverCl):
 
         return list(set(opts))
 
-    def _dalloc(self, ocl_queue) -> None:
+    def _dalloc(self, ocl_queue):
         # Set solution buffer size
         size = self.model.m * self.mesh.nb_cells
 
         # Set device buffer storing solution values at t_n
-        self.wn_d = cl_array.empty(ocl_queue, size, dtype=np.float32)
+        self.wn_d = cl_array.empty(ocl_queue, size, dtype=self.dtype)
 
         # Set device buffer storing solution values at t_{n+1}
         self.wnp1_d = cl_array.empty(
             ocl_queue,
             size,
-            dtype=np.float32,
+            dtype=self.dtype,
         )
 
         # Set device buffer storing cells center coordinates
@@ -378,7 +355,7 @@ class FVSolverCl(SolverCl):
         self.wn_rec_d = cl_array.empty(
             ocl_queue,
             size,
-            dtype=np.float32,
+            dtype=self.dtype,
         )
 
         # Compute buffer allocated size
@@ -391,7 +368,7 @@ class FVSolverCl(SolverCl):
             self.wn_rec_d,
         )
 
-    def _init_sol(self, ocl_queue, ocl_prg) -> None:
+    def _init_sol(self, ocl_queue, ocl_prg):
         # Call CL Kernel initializing solution at t_{n}
         ocl_prg.solver_init_sol(
             ocl_queue,
@@ -411,15 +388,15 @@ class FVSolverCl(SolverCl):
         cl.enqueue_copy(ocl_queue, self.wn_h, self.wn_d.data).wait()
         writer.write_data(self.t, cell_data=cell_data)
 
-    def _solve(self, ocl_queue, ocl_prg) -> None:
+    def _solve(self, ocl_queue, ocl_prg):
         # Set OpenCL Kernel scalar arguments
         time_step = ocl_prg.solver_time_step
-        time_step.set_scalar_arg_dtypes([np.float32, None, None, None, None])
+        time_step.set_scalar_arg_dtypes([self.dtype, None, None, None, None])
 
         with meshio.xdmf.TimeSeriesWriter(self.export_data_file) as writer:
             # Export mesh
             writer.write_points_cells(
-                self.mesh.nodes, [(self.mesh.cell_name, self.mesh.cells)]
+                self.mesh.points, [(self.mesh.cell_name, self.mesh.cells)]
             )
 
             # Export solution at t=0

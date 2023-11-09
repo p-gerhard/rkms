@@ -41,7 +41,7 @@ static const int q4_face_to_loc_node[Q4_FACE_PER_ELEM][Q4_NODE_PER_FACE] = {
     {0, 1}, // South
 };
 
-static const float q4_face_normals[Q4_FACE_PER_ELEM][2] = {
+static const double q4_face_normals[Q4_FACE_PER_ELEM][2] = {
     { 1,  0}, // Right
     {-1,  0}, // Left
     { 0,  1}, // North
@@ -77,8 +77,8 @@ static void check_perror(bool condition, const std::string &func_name,
  * @param n1_idx Index of the second node in the `nodes` array.
  * @param vec Array to store the computed vector.
  */
-static inline void get_vector(const float nodes[Q4_NODE_PER_ELEM * 2],
-                              int n0_idx, int n1_idx, float vec[2])
+static inline void get_vector(const double nodes[Q4_NODE_PER_ELEM * 2],
+                              int n0_idx, int n1_idx, double vec[2])
 {
     vec[0] = nodes[2 * n1_idx + 0] - nodes[2 * n0_idx + 0];
     vec[1] = nodes[2 * n1_idx + 1] - nodes[2 * n0_idx + 1];
@@ -91,7 +91,7 @@ static inline void get_vector(const float nodes[Q4_NODE_PER_ELEM * 2],
  * @param y Array containing the coordinates of the second vector.
  * @return The dot product of the two vectors.
  */
-static inline float dot_product(const float x[2], const float y[2])
+static inline double dot_product(const double x[2], const double y[2])
 {
     return x[0] * y[0] + x[1] * y[1];
 }
@@ -102,7 +102,7 @@ static inline float dot_product(const float x[2], const float y[2])
  * @param x Array containing the coordinates of the vector.
  * @return The Euclidean norm of the vector.
  */
-static inline float norm(const float x[2])
+static inline double norm(const double x[2])
 {
     return sqrt(x[0] * x[0] + x[1] * x[1]);
 }
@@ -114,8 +114,8 @@ static inline float norm(const float x[2])
  * @param y Array containing the coordinates of the second vector.
  * @param res Array to store the resulting cross product.
  */
-static inline void cross_product(const float x[2], const float y[2],
-                                 float res[2])
+static inline void cross_product(const double x[2], const double y[2],
+                                 double res[2])
 {
     res[0] = x[1] * y[2] - x[2] * y[1];
     res[1] = x[2] * y[0] - x[0] * y[2];
@@ -129,13 +129,13 @@ static inline void cross_product(const float x[2], const float y[2],
  * the cell.
  * @param node_ids Array containing the IDs of the nodes composing the cell.
  */
-static inline void q4_lexsort(float node_coords[Q4_NODE_PER_ELEM * Q4_PHY_DIM],
+static inline void q4_lexsort(double node_coords[Q4_NODE_PER_ELEM * Q4_PHY_DIM],
                               long node_ids[Q4_NODE_PER_ELEM])
 {
     // Macro to swap the coordinates and IDs of two nodes
 #define SWAP_NODE(i, j)                                                        \
-    const float tmp_x = node_coords[2 * i + 0];                                \
-    const float tmp_y = node_coords[2 * i + 1];                                \
+    const double tmp_x = node_coords[2 * i + 0];                               \
+    const double tmp_y = node_coords[2 * i + 1];                               \
     node_coords[2 * i + 0] = node_coords[2 * j + 0];                           \
     node_coords[2 * i + 1] = node_coords[2 * j + 1];                           \
     node_coords[2 * j + 0] = tmp_x;                                            \
@@ -174,20 +174,20 @@ static inline void q4_lexsort(float node_coords[Q4_NODE_PER_ELEM * Q4_PHY_DIM],
  * @remarks This function verifies the edge length and the direction of the
  * computed normals for each face.
  */
-static void q4_check_normals(float node_coords[Q4_NODE_PER_ELEM * Q4_PHY_DIM],
-                             const float sizes[Q4_PHY_DIM])
+static void q4_check_normals(double node_coords[Q4_NODE_PER_ELEM * Q4_PHY_DIM],
+                             const double sizes[Q4_PHY_DIM])
 {
     bool check = true;
     for (int id_face = 0; id_face < Q4_FACE_PER_ELEM; id_face++) {
         long n0 = q4_face_to_loc_node[id_face][0];
         long n1 = q4_face_to_loc_node[id_face][1];
 
-        float e0[Q4_PHY_DIM];
+        double e0[Q4_PHY_DIM];
         // Compute vector from node (n0) to node (n1)
         get_vector(node_coords, n0, n1, e0);
 
         // Check both edge lengths
-        const float e0_ln = norm(e0);
+        const double e0_ln = norm(e0);
 
         int edge_len_id = q4_face_edge_len[id_face];
         check = (check && (fabs(e0_ln - sizes[edge_len_id]) < MESH_TOL));
@@ -198,9 +198,9 @@ static void q4_check_normals(float node_coords[Q4_NODE_PER_ELEM * Q4_PHY_DIM],
         assert(check);
 
         // Check normal direction to the edge
-        float n[Q4_PHY_DIM] = { e0[1], -e0[0] };
+        double n[Q4_PHY_DIM] = { e0[1], -e0[0] };
 
-        const float n_ref[Q4_PHY_DIM] = {
+        const double n_ref[Q4_PHY_DIM] = {
             q4_face_normals[id_face][0],
             q4_face_normals[id_face][1],
         };
@@ -222,7 +222,8 @@ static void q4_check_normals(float node_coords[Q4_NODE_PER_ELEM * Q4_PHY_DIM],
  * mesh.
  * @param sizes Array containing the found cell sizes (dx, dy).
  */
-void mesh_q4_extract_cell_size(const float *nodes, long *cells, float sizes[2])
+void mesh_q4_extract_cell_size(const double *nodes, long *cells,
+                               double sizes[2])
 {
     // Step 1: Load the first cell's node IDs (Q4_NODE_PER_ELEM first node IDs)
     long loc_cell_nodes_id[Q4_NODE_PER_ELEM];
@@ -231,7 +232,7 @@ void mesh_q4_extract_cell_size(const float *nodes, long *cells, float sizes[2])
     }
 
     // Step 2: Load the coordinates of the first cell's nodes
-    float loc_nodes[Q4_NODE_PER_ELEM * 2];
+    double loc_nodes[Q4_NODE_PER_ELEM * 2];
     for (int i = 0; i < Q4_NODE_PER_ELEM; i++) {
         long id_node = loc_cell_nodes_id[i];
         for (int k = 0; k < Q4_PHY_DIM; k++) {
@@ -275,7 +276,7 @@ void mesh_q4_extract_cell_size(const float *nodes, long *cells, float sizes[2])
         {1, 2}
     };
 
-    float v[2], dx[2], dy[2];
+    double v[2], dx[2], dy[2];
     for (int k = 0; k < 2; k++) {
         // Compute dx vector
         get_vector(loc_nodes, dx_edge[k][0], dx_edge[k][1], v);
@@ -315,11 +316,12 @@ void mesh_q4_extract_cell_size(const float *nodes, long *cells, float sizes[2])
  * @param cells_center The array to store the computed cell centers of all the
  * cells.
  */
-void mesh_q4_process_cells(const long nb_cells, const float sizes[2],
-                           const float *nodes, long *cells, float *cells_center)
+void mesh_q4_process_cells(const long nb_cells, const double sizes[2],
+                           const double *nodes, long *cells,
+                           double *cells_center)
 {
     long loc_cell_nodes_id[Q4_NODE_PER_ELEM];
-    float loc_nodes[Q4_NODE_PER_ELEM * Q4_PHY_DIM];
+    double loc_nodes[Q4_NODE_PER_ELEM * Q4_PHY_DIM];
 
     bool check = true;
     for (long id_cell = 0; id_cell < nb_cells; id_cell++) {
@@ -359,8 +361,8 @@ void mesh_q4_process_cells(const long nb_cells, const float sizes[2],
         // Step 4: Re-order inplace from the lexical order to the proper Q8
         // order Take advantage to compute sum for later cells centers
         // computation
-        float sum_x = 0.f;
-        float sum_y = 0.f;
+        double sum_x = 0;
+        double sum_y = 0;
 
         for (int i = 0; i < Q4_NODE_PER_ELEM; i++) {
             long id_node = cells[Q4_NODE_PER_ELEM * id_cell + i];
@@ -381,12 +383,12 @@ void mesh_q4_process_cells(const long nb_cells, const float sizes[2],
 
         // Setp 6: Compute cell's center coordinates using true rectangle
         // formula
-        const float center_1[2] = { sum_x / 4.f, sum_y / 4.f };
+        const double center_1[2] = { sum_x / 4, sum_y / 4 };
 
         // Step 7: Compute cell's centers coordinates using displacement from
         // first cell's node
-        const float center_2[2] = { loc_nodes[0] + 0.5f * sizes[0],
-                                    loc_nodes[1] + 0.5f * sizes[1] };
+        const double center_2[2] = { loc_nodes[0] + 0.5 * sizes[0],
+                                     loc_nodes[1] + 0.5 * sizes[1] };
 
         // Step 8: Verify that both values are same
         check = check && (fabs(center_1[0] - center_2[0]) < MESH_TOL);
@@ -422,15 +424,15 @@ void mesh_q4_process_cells(const long nb_cells, const float sizes[2],
  *       coordinates for the i-th node can be accessed as follows:
  *       `nodes[Q4_PHY_DIM * i + j]`, where `j` is the coordinate index (0, 1).
  */
-void mesh_q4_process_nodes(const long nb_nodes, const float sizes[Q4_PHY_DIM],
-                           float *nodes)
+void mesh_q4_process_nodes(const long nb_nodes, const double sizes[Q4_PHY_DIM],
+                           double *nodes)
 {
     // Calculate half cell sizes
-    const float half_dx = 0.5f * sizes[0];
-    const float half_dy = 0.5f * sizes[1];
+    const double half_dx = 0.5 * sizes[0];
+    const double half_dy = 0.5 * sizes[1];
 
     // Process each node
-    float old_coord[Q4_PHY_DIM];
+    double old_coord[Q4_PHY_DIM];
     bool check = true;
     for (long id_node = 0; id_node < nb_nodes; id_node++) {
         // Store the original coordinates
@@ -438,9 +440,9 @@ void mesh_q4_process_nodes(const long nb_nodes, const float sizes[Q4_PHY_DIM],
         old_coord[1] = nodes[Q4_PHY_DIM * id_node + 1];
 
         // Round the x, y and z coordinates
-        const float x =
+        const double x =
             rint(nodes[Q4_PHY_DIM * id_node + 0] / half_dx) * half_dx;
-        const float y =
+        const double y =
             rint(nodes[Q4_PHY_DIM * id_node + 1] / half_dy) * half_dy;
 
         // Update the node coordinates

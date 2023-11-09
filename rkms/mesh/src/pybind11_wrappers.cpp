@@ -15,17 +15,17 @@ namespace py=pybind11;
  * @param is_2d Boolean flag indicating whether the mesh is 2D or 3D. 
  */
 void pybind11_wrapper_mesh_extract_cell_size(
-	py::array_t<float> np_nodes, py::array_t<long> np_cells,
-	py::array_t<float> np_cell_size, bool is_2d)
+	py::array_t<double> np_nodes, py::array_t<long> np_cells,
+	py::array_t<double> np_cell_size, bool is_2d)
 {
 	// Unpack numpy C struct
 	py::buffer_info info_nodes = np_nodes.request();
 	py::buffer_info info_cells = np_cells.request();
 	py::buffer_info info_cell_size = np_cell_size.request();
 
-	float *nodes = static_cast<float *>(info_nodes.ptr);
+	double *nodes = static_cast<double *>(info_nodes.ptr);
 	long *cells = static_cast<long *>(info_cells.ptr);
-	float *cell_size = static_cast<float *>(info_cell_size.ptr);
+	double *cell_size = static_cast<double *>(info_cell_size.ptr);
 
 	if (is_2d) {
 		mesh_q4_extract_cell_size(nodes, cells, cell_size);
@@ -47,9 +47,9 @@ void pybind11_wrapper_mesh_extract_cell_size(
  * @param is_2d Boolean flag indicating whether the mesh is 2D or 3D. 
  */
 void pybind11_wrapper_mesh_process_cells(
-	const long nb_cells, py::array_t<float> np_cell_size,
-	py::array_t<float> np_nodes, py::array_t<long> np_cells,
-	py::array_t<float> np_cells_center, bool is_2d)
+	const long nb_cells, py::array_t<double> np_cell_size,
+	py::array_t<double> np_nodes, py::array_t<long> np_cells,
+	py::array_t<double> np_cells_center, bool is_2d)
 {
 	/* Unpack numpy C struct */
 	py::buffer_info info_cell_size = np_cell_size.request();
@@ -57,10 +57,10 @@ void pybind11_wrapper_mesh_process_cells(
 	py::buffer_info info_cells = np_cells.request();
 	py::buffer_info info_cells_center = np_cells_center.request();
 
-	float *cell_size = static_cast<float *>(info_cell_size.ptr);
-	float *nodes = static_cast<float *>(info_nodes.ptr);
+	double *cell_size = static_cast<double *>(info_cell_size.ptr);
+	double *nodes = static_cast<double *>(info_nodes.ptr);
 	long *cells = static_cast<long *>(info_cells.ptr);
-	float *cells_center = static_cast<float *>(info_cells_center.ptr);
+	double *cells_center = static_cast<double *>(info_cells_center.ptr);
 
 	if (is_2d) {
 		mesh_q4_process_cells(nb_cells, cell_size, nodes, cells, cells_center);
@@ -80,16 +80,16 @@ void pybind11_wrapper_mesh_process_cells(
  * @param is_2d Boolean flag indicating whether the mesh is 2D or 3D.
  */
 void pybind11_wrapper_mesh_process_nodes(const long nb_nodes,
-										 py::array_t<float> np_cell_size,
-										 py::array_t<float> np_nodes,
+										 py::array_t<double> np_cell_size,
+										 py::array_t<double> np_nodes,
 										 bool is_2d)
 {
 	/* Unpack numpy C struct */
 	py::buffer_info info_cell_size = np_cell_size.request();
 	py::buffer_info info_nodes = np_nodes.request();
 
-	float *cell_size = static_cast<float *>(info_cell_size.ptr);
-	float *nodes = static_cast<float *>(info_nodes.ptr);
+	double *cell_size = static_cast<double *>(info_cell_size.ptr);
+	double *nodes = static_cast<double *>(info_nodes.ptr);
 	if (is_2d) {
 		mesh_q4_process_nodes(nb_nodes, cell_size, nodes);
 	} else {

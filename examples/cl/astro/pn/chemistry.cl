@@ -1,10 +1,13 @@
 #ifndef _CHEMISTRY_CL
 #define _CHEMISTRY_CL
 
-#pragma OPENCL EXTENSION cl_khr_fp64 : enable
+#ifdef USE_DOUBLE
 
+#define N_TRESHOLD     (0.)
+#define T_TRESHOLD     (10.)
+#define CST_KB         (1.380649e-23)
 // Speed of light in vaccum
-#define C_LIGHT_VACCUM 299792458.
+#define C_LIGHT_VACCUM (299792458.)
 
 // Collisional ionisation rate in cm^{3}.s^{-1} (Maselli et al. 2003)
 double gamma_h0(const double T)
@@ -188,8 +191,8 @@ double get_root_newton_raphson(const double a, const double b, const double c,
     return x;
 }
 
-__kernel void chem_init_sol(__global float *nh, __global float *temp,
-                            __global float *xi)
+__kernel void chem_init_sol(__global double *nh, __global double *temp,
+                            __global double *xi)
 {
     // Current cell ID
     const long id = get_global_id(0);
@@ -199,72 +202,72 @@ __kernel void chem_init_sol(__global float *nh, __global float *temp,
     temp[id] = 2e3;
 }
 
-__kernel void chem_step(__global const float *nh, __global float *wn,
-                        __global float *temp, __global float *xi)
+__kernel void chem_step(__global const double *nh, __global double *wn,
+                        __global double *temp, __global double *xi)
 {
     // Current cell ID
     const long id = get_global_id(0);
 
     // Photon density
-    const float N = wn[id];
-    const float N_pos = max(0, wn[id]);
+    const double N = wn[id];
+    const double N_pos = max(N_TRESHOLD, wn[id]);
 
-    const float x = xi[id];
-    const float T = temp[id];
-    const float rho = nh[id];
+    const double x = xi[id];
+    const double T = temp[id];
+    const double rho = nh[id];
 
     // Chemistry coefficients
-    //const float al_i = 1.09e-18*c;
-    const float al_i = 2.493e-22;
-    const float al = alpha_ah(T);
-    const float al_b = alpha_bh(T);
-    const float bt = beta_h(T);
+    //const double al_i = 1.09e-18*c;
+    const double al_i = 2.493e-22;
+    const double al = alpha_ah(T);
+    const double al_b = alpha_bh(T);
+    const double bt = beta_h(T);
 
     // Intermediate vars
-    const float t0 = rho * rho;
-    const float t1 = t0 * DT;
-    const float t2 = al_i * C_LIGHT_VACCUM;
-    const float t3 = rho / t2;
-    const float t4 = 1. / (t2 * DT);
+    const double t0 = rho * rho;
+    const double t1 = t0 * DT;
+    const double t2 = al_i * C_LIGHT_VACCUM;
+    const double t3 = rho / t2;
+    const double t4 = 1. / (t2 * DT);
 
     // Compute new x (x_n)
-    const float m = (al_b + bt) * t1;
-    const float n = rho - (al + bt) * t3 - (al_b + 2. * bt) * t1;
-    const float p = -rho * (1. + x) - N_pos - t4 + bt * (t3 + t1);
-    const float q = N_pos + x * (rho + t4);
+    const double m = (al_b + bt) * t1;
+    const double n = rho - (al + bt) * t3 - (al_b + 2. * bt) * t1;
+    const double p = -rho * (1. + x) - N_pos - t4 + bt * (t3 + t1);
+    const double q = N_pos + x * (rho + t4);
 
-    float x_n = get_root_newton_raphson(m, n, p, q);
+    double x_n = get_root_newton_raphson(m, n, p, q);
 
     // Compute new T (T_n)
-    const float kB = 1.380649e-23;
-    const float L = cooling_rate_density(T, rho, x_n);
-    const float H = heating_rate(rho, x, x_n, N_pos, al_i);
+    const double L = cooling_rate_density(T, rho, x_n);
+    const double H = heating_rate(rho, x, x_n, N_pos, al_i);
 
-    const float coef = 2. * (H - L) * DT / (3. * rho * (1. + x_n) * kB);
-    float T_n = (coef + T) / (1. + x_n - x);
-    T_n = max(T_n, 10.);
+    const double coef = 2. * (H - L) * DT / (3. * rho * (1. + x_n) * CST_KB);
+    double T_n = (coef + T) / (1. + x_n - x);
+    T_n = max(T_n, (double)10.);
 
     // Compute new N (N_n)
-    const float t5 = x_n * x_n;
-    const float c1 = bt * t1 * (x_n - t5);
-    const float c2 = -al_b * t1 * t5;
-    const float N_n = N + c1 + c2 + -rho * (x_n - x);
+    const double t5 = x_n * x_n;
+    const double c1 = bt * t1 * (x_n - t5);
+    const double c2 = -al_b * t1 * t5;
+    const double N_n = N + c1 + c2 + -rho * (x_n - x);
 
-    // Update moments global buffer
-    // const float ratio = N_n / N;
-    const float ratio = 0.95;
-    // wn[id] = 0.95 * wn[id];
-    // wn[id] = N_n;
-    for (int k = 1; k < M; k++) {
-        long imem = id + k * NGRID;
-        wn[imem] = wn[imem] * ratio;
-    }
+    //     // Update moments global buffer
+    // const double ratio = N_n / N;
+    const double ratio = 0.95;
+    //     // wn[id] = 0.95 * wn[id];
+    //     // wn[id] = N_n;
+    //     for (int k = 1; k < M; k++) {
+    //         long imem = id + k * NGRID;
+    //         wn[imem] = wn[imem] * ratio;
+    //     }
 
-    // Update x global buffer
-    xi[id] = x_n;
+    //     // Update x global buffer
+    //     xi[id] = x_n;
 
-    // Update temperature global buffer
-    temp[id] = T_n;
+    //     // Update temperature global buffer
+    //     temp[id] = T_n;
 }
 
+#endif
 #endif

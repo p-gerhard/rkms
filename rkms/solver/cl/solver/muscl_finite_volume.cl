@@ -10,6 +10,7 @@
 #endif
 
 #ifdef USE_DOUBLE
+#pragma OPENCL EXTENSION cl_khr_fp64 : enable
 typedef double real_t;
 #define ZERO         (0.)
 #define ONE          (1.)
