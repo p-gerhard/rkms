@@ -3,6 +3,15 @@
 
 #define C_WAWE_POW_2 (C_WAVE * C_WAVE)
 
+#ifdef USE_DOUBLE       
+#define FIVE_OVER_THREE (1.66666666666666667)
+#define TWO_OVER_THREE  (0.66666666666666667)
+#else
+#define FIVE_OVER_THREE (1.666666667f)
+#define TWO_OVER_THREE  (0.666666667f)
+#endif
+
+
 inline static float get_r(const real_t rho, const real_t norm)
 {
 #ifdef USE_DOUBLE
@@ -18,9 +27,11 @@ inline real_t get_chi(const real_t r)
     const real_t t0 = r * r;
 
 #ifdef USE_DOUBLE
-    const double chi = (3. + 4. * t0) / (5. + 2. * sqrt(4. - 3. * t0));
+    // const double chi = (3. + 4. * t0) / (5. + 2. * sqrt(4. - 3. * t0));
+    const double chi = FIVE_OVER_THREE -  TWO_OVER_THREE * sqrt(4. - 3. * t0);
 #else
-    const float chi = (3.f + 4.f * t0) / (5.f + 2.f * sqrt(4.f - 3.f * t0));
+    // const float chi = (3.f + 4.f * t0) / (5.f + 2.f * sqrt(4.f - 3.f * t0));
+    const float chi = FIVE_OVER_THREE -  TWO_OVER_THREE * sqrt(4.f - 3.f * t0);
 #endif
     return chi;
 }
@@ -47,12 +58,11 @@ void phy_flux(const real_t wn[4], const real_t vn[3], real_t flux[4])
 
     const real_t u[3] = { wn[1], wn[2], wn[3] };
     real_t un[3];
-    // Normalized intensity vector In
     safe_normalise(u, un, &norm);
 
-    /* Get closure value */
+    // Get closure value
     const real_t r = get_r(wn[0], norm);
-    // printf("%f\n, ", r);
+
     const real_t chi = get_chi(r);
 
 #ifdef USE_DOUBLE
@@ -98,11 +108,6 @@ void m1_num_flux_rusanov(const real_t wL[4], const real_t wR[4],
     flux[1] = t0 * ((fL[1] + fR[1]) - C_WAVE * (wR[1] - wL[1]));
     flux[2] = t0 * ((fL[2] + fR[2]) - C_WAVE * (wR[2] - wL[2]));
     flux[3] = t0 * ((fL[3] + fR[3]) - C_WAVE * (wR[3] - wL[3]));
-
-    // flux[0] = 0.;
-    // flux[1] = 0.;
-    // flux[2] = 0.;
-    // flux[3] = 0.;
 }
 
 #endif
