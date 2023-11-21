@@ -21,12 +21,23 @@
 #include <solver/muscl_finite_volume.cl>
 
 // Model injected values
-#define SRC_X __SRC_X__
-#define SRC_Y __SRC_Y__
-#define SRC_Z __SRC_Z__
+#define SRC_X           __SRC_X__
+#define SRC_Y           __SRC_Y__
+#define SRC_Z           __SRC_Z__
+
+#define PHY_CST_KB      (1.380649e-23)
+#define PHY_CST_ALPHA_I (2.493e-22)
+#define PHY_SCALE_X     (2.03676e20)
+#define PHY_SCALE_C     (299792458.)
+
+#define PHY_DX          (PHY_SCALE_X * DX)
+#define PHY_DY          (PHY_SCALE_X * DY)
+#define PHY_DZ          (PHY_SCALE_X * DZ)
+#define PHY_DT          (PHY_SCALE_X * DT / PHY_SCALE_C)
 
 #include "numfluxes/m1.cl"
 #include "sources/gaussian_line.cl"
+#include "../h_chemistry.cl"
 
 void model_init_cond(const real_t t, const real_t x[DIM], real_t s[M])
 {

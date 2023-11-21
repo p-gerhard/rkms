@@ -3,11 +3,25 @@
 
 #ifdef USE_DOUBLE
 
-#define N_TRESHOLD     (0.)
-#define T_TRESHOLD     (10.)
-#define CST_KB         (1.380649e-23)
-// Speed of light in vaccum
-#define C_LIGHT_VACCUM (299792458.)
+#define N_TRESHOLD      (0.)
+#define T_TRESHOLD      (10.)
+
+// 5.29924205097914771424970270599669321901353502361957351175257 × 10^9
+
+
+// Dimensioning
+#define PHY_CST_KB      (1.380649e-23)
+#define PHY_CST_ALPHA_I (2.493e-22)
+#define PHY_SCALE_X     (2.03676e20)
+#define PHY_SCALE_C     (299792458.)
+// #define PHY_SCALE_T     (6.79390e11) // PHY_SCALE_X / PHY_SCALE_C
+
+#define PHY_DX          (PHY_SCALE_X * DX)
+#define PHY_DY          (PHY_SCALE_X * DY)
+#define PHY_DZ          (PHY_SCALE_X * DZ)
+#define PHY_DT          (PHY_SCALE_X * DT / PHY_SCALE_C)
+
+#define C_LIGHT_VACCUM  (299792458.)
 
 // Collisional ionisation rate in cm^{3}.s^{-1} (Maselli et al. 2003)
 double gamma_h0(const double T)
@@ -137,10 +151,10 @@ double beta_bremsstrahlung(const double T)
 }
 
 // Total cooling rate (sum of terms below) in erg.cm^{3}.s^{-1}
-double cooling_rate(const double T, const double x)
+double cooling_rate(const double T, const double rho)
 {
-    const double t0 = x * x;
-    const double t1 = 1.0 - x;
+    const double t0 = rho * rho;
+    const double t1 = 1.0 - rho;
     const double t2 = t1 * t1;
     double res = (beta_bremsstrahlung(T) + eta_h0(T)) * t0 +
                  (psi_h0(T) + ksi_h0(T)) * t2;
@@ -217,8 +231,6 @@ __kernel void chem_step(__global const double *nh, __global double *wn,
     const double rho = nh[id];
 
     // Chemistry coefficients
-    //const double al_i = 1.09e-18*c;
-    const double al_i = 2.493e-22;
     const double al = alpha_ah(T);
     const double al_b = alpha_bh(T);
     const double bt = beta_h(T);
@@ -226,7 +238,7 @@ __kernel void chem_step(__global const double *nh, __global double *wn,
     // Intermediate vars
     const double t0 = rho * rho;
     const double t1 = t0 * DT;
-    const double t2 = al_i * C_LIGHT_VACCUM;
+    const double t2 = PHY_CST_ALPHA_I * C_LIGHT_VACCUM;
     const double t3 = rho / t2;
     const double t4 = 1. / (t2 * DT);
 
@@ -240,7 +252,7 @@ __kernel void chem_step(__global const double *nh, __global double *wn,
 
     // Compute new T (T_n)
     const double L = cooling_rate_density(T, rho, x_n);
-    const double H = heating_rate(rho, x, x_n, N_pos, al_i);
+    const double H = heating_rate(rho, x, x_n, N_pos, PHY_CST_ALPHA_I);
 
     const double coef = 2. * (H - L) * DT / (3. * rho * (1. + x_n) * CST_KB);
     double T_n = (coef + T) / (1. + x_n - x);

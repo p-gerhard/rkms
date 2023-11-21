@@ -43,7 +43,9 @@ class FVTimeMode(Enum):
 
 
 class FVTimeData:
-    def __init__(self, time_mode, hmin, tmax, dt, cfl, iter_max, dtype=np.float32):
+    def __init__(
+        self, time_mode, hmin, tmax, dt, cfl, iter_max, c_wave=1.0, dtype=np.float32
+    ):
         # Set dtype:
         self.dtype = dtype
 
@@ -59,6 +61,7 @@ class FVTimeData:
         self.dt = dt
         self.cfl = cfl
         self.iter_max = iter_max
+        self.c_wave = c_wave
 
         # Set full time data
         self._set_time_data()
@@ -72,10 +75,10 @@ class FVTimeData:
         )
 
     def _compute_cfl(self):
-        return self.dtype(self.dt / self.hmin)
+        return self.dtype(self.dt * self.c_wave / self.hmin)
 
     def _compute_dt(self):
-        return self.dtype(self.cfl * self.hmin)
+        return self.dtype(self.cfl * self.hmin / self.c_wave)
 
     def _compute_iter_max(self):
         return np.int64(np.floor((self.tmax + np.finfo(self.dtype).eps) / self.dt))
@@ -179,6 +182,7 @@ class FVSolverCl(SolverCl):
         cfl,
         dt,
         iter_max: np.int64 | None = None,
+        c_wave=1.0,
         use_muscl: bool = False,
         export_dir: str | None = None,
         export_idx: list[int] | None = None,
@@ -198,12 +202,7 @@ class FVSolverCl(SolverCl):
 
         # Set time data
         self.time_data = FVTimeData(
-            time_mode,
-            self.mesh.hmin,
-            tmax,
-            dt,
-            cfl,
-            iter_max,
+            time_mode, self.mesh.hmin, tmax, dt, cfl, iter_max, c_wave
         )
 
         # Set time
@@ -274,22 +273,20 @@ class FVSolverCl(SolverCl):
 
     @property
     def cl_replace_map(self) -> dict:
-        replace_map = self.model.cl_replace_map.copy()
-        replace_map.update(
-            {
-                "__CFL__": self.time_data.cfl,
-                "__DIM__": self.mesh.dim,
-                "__DT__": self.time_data.dt,
-                "__DX__": self.mesh.dx,
-                "__DY__": self.mesh.dy,
-                "__DZ__": self.mesh.dz,
-                "__M__": self.model.m,
-                "__NGRID__": self.mesh.nb_cells,
-                "__TMAX__": self.time_data.tmax,
-                "__C_WAVE__": 1.0,
-            }
-        )
-        return replace_map
+        solver_map = {
+            "__CFL__": self.time_data.cfl,
+            "__DIM__": self.mesh.dim,
+            "__DT__": self.time_data.dt,
+            "__DX__": self.mesh.dx,
+            "__DY__": self.mesh.dy,
+            "__DZ__": self.mesh.dz,
+            "__M__": self.model.m,
+            "__NGRID__": self.mesh.nb_cells,
+            "__TMAX__": self.time_data.tmax,
+            "__C_WAVE__": self.time_data.c_wave,
+        }
+        solver_map.update(self.model.cl_replace_map)
+        return solver_map
 
     @property
     def cl_src_file(self):
@@ -321,6 +318,9 @@ class FVSolverCl(SolverCl):
         opts += ["-I {}".format(dir) for dir in self.model.cl_include_dirs]
 
         return list(set(opts))
+
+    def _transform_mesh(self) -> None:
+        return
 
     def _dalloc(self, ocl_queue):
         # Set solution buffer size

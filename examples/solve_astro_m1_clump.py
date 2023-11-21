@@ -6,8 +6,9 @@ import numpy as np
 import pyopencl as cl
 import pyopencl.array as cl_array
 
-from rkms.model import Model, PN
+from rkms.model import Model, M1
 from rkms.solver import FVSolverCl, FVTimeMode, get_progressbar
+from rkms.model import M1
 
 # Configure environment variables for controlling pyopencl and NVIDIA platform
 # behaviors
@@ -67,14 +68,14 @@ class AstroFVSolverCL(FVSolverCl):
         super()._init_sol(ocl_queue, ocl_prg)
 
         # Call CL Kernel initializing chemistry at t_{0}
-        ocl_prg.chem_init_sol(
-            ocl_queue,
-            (self.mesh.nb_cells,),
-            None,
-            self.nh_d.data,
-            self.temp_d.data,
-            self.xi_d.data,
-        ).wait()
+        # ocl_prg.chem_init_sol(
+        #     ocl_queue,
+        #     (self.mesh.nb_cells,),
+        #     None,
+        #     self.nh_d.data,
+        #     self.temp_d.data,
+        #     self.xi_d.data,
+        # ).wait()
 
     def _export_data(self, ocl_queue, writer):
         nc = self.mesh.nb_cells
@@ -88,9 +89,9 @@ class AstroFVSolverCL(FVSolverCl):
         # Add chemistry values
         cell_data.update(
             {
-                "Nh": {self.mesh.cell_name: self.nh_h},
-                "T": {self.mesh.cell_name: self.temp_h},
-                "xi": {self.mesh.cell_name: self.xi_h},
+                "n_h": {self.mesh.cell_name: self.nh_h},
+                "tmp": {self.mesh.cell_name: self.temp_h},
+                "x_i": {self.mesh.cell_name: self.xi_h},
             }
         )
 
@@ -129,15 +130,15 @@ class AstroFVSolverCL(FVSolverCl):
                     self.wnp1_d.data,
                 ).wait()
 
-                ocl_prg.chem_step(
-                    ocl_queue,
-                    (self.mesh.nb_cells,),
-                    None,
-                    self.nh_d.data,
-                    self.wn_d.data,
-                    self.temp_d.data,
-                    self.xi_d.data,
-                ).wait()
+                # ocl_prg.chem_step(
+                #     ocl_queue,
+                #     (self.mesh.nb_cells,),
+                #     None,
+                #     self.nh_d.data,
+                #     self.wn_d.data,
+                #     self.temp_d.data,
+                #     self.xi_d.data,
+                # ).wait()
 
                 # Switching w_{n} and w_{n+1} using references
                 self.wn_d, self.wnp1_d = self.wnp1_d, self.wn_d
@@ -162,45 +163,31 @@ class AstroFVSolverCL(FVSolverCl):
 
 
 if __name__ == "__main__":
-    # Physical dimension of PN approximation
-    dim = 3
-
-    # Order of PN approximation
-    order = 5
-
-    # Load mesh file
-    if dim == 2:
-        filename = "./meshes/unit_square_nx64_ny64.msh"
-    else:
-        filename = "./meshes/unit_cube_nx100_ny100_nz100.msh"
-
-    # Build PN Model
-    m = PN(
-        order,
-        dim,
-        cl_src_file="./cl/astro/pn/main.cl",
-        cl_include_dirs=["./cl/astro/pn"],
-        cl_build_opts=[
-            f"-D USE_SPHERICAL_HARMONICS_P{order}",
-            "-cl-fast-relaxed-math",
-        ],
-        cl_replace_map={},
+    # Build Transport Model
+    m = M1(
+        3,
+        cl_src_file="./cl/astro/m1/main.cl",
+        cl_include_dirs=["./cl/astro/m1"],
+        cl_build_opts=["-cl-fast-relaxed-math"],
+        cl_replace_map={
+            "__SRC_X__": 0.5,
+            "__SRC_Y__": 0.5,
+            "__SRC_Z__": 0.5,
+        },
     )
 
     # Build solver
     s = AstroFVSolverCL(
-        filename=filename,
+        filename="./meshes/unit_cube_nx100_ny100_nz100.msh",
         model=m,
         time_mode=FVTimeMode.FORCE_ITERMAX_FROM_CFL,
-        tmax=None,
+        tmax=0.5,
         cfl=0.9,
         dt=None,
-        iter_max=400,
-        use_muscl=True,
-        export_idx=[0, 1, 2],
+        iter_max=100,
+        use_muscl=False,
         export_frq=40,
-        use_double=True,
-        c_wave=3e9,
+        use_double=False,
     )
 
     # Run solver
