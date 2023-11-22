@@ -104,6 +104,7 @@ class SolverCl(ABC):
         ocl_prg.build(options=self.cl_build_opts)
         logger.info(f"OpenCL sucessfully built in {time.time() - t_start:>.3f} sec")
 
+        print(src)
         return ocl_queue, ocl_prg
 
     def run(self) -> None:

@@ -319,9 +319,6 @@ class FVSolverCl(SolverCl):
 
         return list(set(opts))
 
-    def _transform_mesh(self) -> None:
-        return
-
     def _dalloc(self, ocl_queue):
         # Set solution buffer size
         size = self.model.m * self.mesh.nb_cells
