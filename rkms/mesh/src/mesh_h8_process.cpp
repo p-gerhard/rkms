@@ -66,6 +66,8 @@ static const int h8_face_edge_len[H8_FACE_PER_ELEM][2] = {
 
 static const int h8_lex_order[H8_NODE_PER_ELEM] = { 0, 4, 3, 7, 1, 5, 2, 6 };
 
+static const int h8_opp_face[H8_FACE_PER_ELEM] = { 1, 0, 3, 2, 5, 4 };
+
 /**
  * Prints an error message if the given condition is false.
  *
@@ -303,8 +305,6 @@ void mesh_h8_extract_cell_size(const double *nodes, long *cells,
             loc_nodes[H8_PHY_DIM * i + k] = nodes[H8_PHY_DIM * id_node + k];
         }
     }
-
-
 
     /**
 	 * Note: The following steps are intended to address the issue of node ID
@@ -632,6 +632,7 @@ void mesh_h8_build_elem2elem(const long nb_cells, const long *cells,
     }
     face_map.clear();
 }
+
 /**
  * Checks the correctness of the `elem2elem` array for H4 elements.
  *
@@ -667,6 +668,46 @@ void mesh_h8_check_elem2elem(const long nb_cells, const long *elem2elem)
                              "elem2elem connectivy is not valid");
 
                 assert(check);
+            }
+        }
+    }
+}
+
+/**
+ * Build periodic mesh connectivity for H8 elements.
+ *
+ * This function assumes that the element connectivity (through faces) is
+ * already built in the 'elem2elem' array. It modifies 'elem2elem' to ensure
+ * periodic connectivity across boundary faces of the mesh.
+ *
+ * @param nb_cells Number of H8 elements in the mesh.
+ * @param elem2elem Connectivity array representing adjacent elements.
+ *                  It is modified to include periodic connectivity.
+ */
+void mesh_h8_build_periodic_mesh(const long nb_cells, long *elem2elem)
+{
+    for (long id_e = 0; id_e < nb_cells; id_e++) {
+        for (int id_f = 0; id_f < H8_FACE_PER_ELEM; id_f++) {
+            // On a boundary face
+            if (elem2elem[id_e * H8_FACE_PER_ELEM + id_f] == -1) {
+                // Find opposite face id
+                long id_fo = h8_opp_face[id_f];
+                long id_n = id_e;
+                bool found = false;
+                for (long k = 0; k < nb_cells; k++) {
+                    // Next neighbour elem (through id_fo) is a boudary face
+                    if (elem2elem[id_n * H8_FACE_PER_ELEM + id_fo] == -1) {
+                        elem2elem[id_e * H8_FACE_PER_ELEM + id_f] = id_n;
+                        elem2elem[id_n * H8_FACE_PER_ELEM + id_fo] = id_e;
+                        found = true;
+                        break;
+                    }
+                    // Jump on the next neighbour elem (through id_fo)
+                    id_n = elem2elem[id_n * H8_FACE_PER_ELEM + id_fo];
+                }
+                check_perror(found, "mesh_h8_build_periodic_mesh",
+                             "periodic matching element not found!");
+                assert(found);
             }
         }
     }

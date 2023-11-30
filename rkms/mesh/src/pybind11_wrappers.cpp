@@ -146,6 +146,29 @@ void pybind11_wrapper_mesh_check_elem2elem(
 	}
 }
 
+/**
+ * Python wrapper function to build periodic mesh.
+ *
+ * @param nb_cells Number of cells in the mesh.
+ * @param np_elem2elem Numpy array representing the element-to-element
+ * connectivity of the mesh.
+ * @param is_2d Boolean flag indicating whether the mesh is 2D or 3D.
+ */
+void pybind11_wrapper_mesh_build_periodic_mesh(
+	const long nb_cells, py::array_t<long> np_elem2elem, bool is_2d)
+{
+	/* Unpack numpy C struct */
+	py::buffer_info info_elem2elem = np_elem2elem.request();
+
+	long *elem2elem = static_cast<long *>(info_elem2elem.ptr);
+
+	if (is_2d) {
+		mesh_q4_build_periodic_mesh(nb_cells, elem2elem);
+	} else {
+		mesh_h8_build_periodic_mesh(nb_cells, elem2elem);
+	}
+}
+
 PYBIND11_MODULE(libmesh, m)
 {
     m.def("extract_cell_size", &pybind11_wrapper_mesh_extract_cell_size,
@@ -231,6 +254,24 @@ PYBIND11_MODULE(libmesh, m)
           This function takes the number of cells, a numpy array representing 
 		  the element-to-element connectivity of the mesh, and a boolean flag 
 		  indicating whether the mesh is 2D or 3D.
+
+          Args:
+              nb_cells: The number of cells in the mesh.
+              np_elem2elem: Numpy array representing the element-to-element 
+			  connectivity of the mesh.
+              is_2d: Boolean flag indicating whether the mesh is 2D or 3D.
+
+          Returns:
+              None
+          )pbdoc");
+		  
+    m.def("build_periodic_mesh", &pybind11_wrapper_mesh_build_periodic_mesh,
+          R"pbdoc(
+          Build periodic mesh connectivity.
+
+		  This function assumes that the element connectivity (through faces) is
+		  already built in the 'elem2elem' array. It modifies 'elem2elem' to ensure
+		  periodic connectivity across boundary faces of the mesh.
 
           Args:
               nb_cells: The number of cells in the mesh.

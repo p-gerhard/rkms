@@ -15,4 +15,6 @@ void mesh_h8_build_elem2elem(const long nb_cells, const long *cells,
                              long *elem2elem);
 
 void mesh_h8_check_elem2elem(const long nb_cells, const long *elem2elem);
+
+void mesh_h8_build_periodic_mesh(const long nb_cells, long *elem2elem);
 #endif

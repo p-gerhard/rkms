@@ -53,6 +53,8 @@ static const int q4_face_edge_len[Q4_FACE_PER_ELEM] = { 1, 0, 1,
 
 static const unsigned int q4_lex_order[Q4_NODE_PER_ELEM] = { 0, 3, 1, 2 };
 
+static const int q4_opp_face[Q4_FACE_PER_ELEM] = { 1, 0, 3, 2 };
+
 /**
  * Prints an error message if the given condition is false.
  *
@@ -564,6 +566,45 @@ void mesh_q4_check_elem2elem(const long nb_cells, const long *elem2elem)
                              "elem2elem connectivy is not valid");
 
                 assert(check);
+            }
+        }
+    }
+}
+
+/**
+ * Build periodic mesh connectivity for Q4 elements.
+ *
+ * This function assumes that the element connectivity (through faces) is
+ * already built in the 'elem2elem' array. It modifies 'elem2elem' to ensure
+ * periodic connectivity across boundary faces of the mesh.
+ *
+ * @param nb_cells Number of H8 elements in the mesh.
+ * @param elem2elem Connectivity array representing adjacent elements.
+ *                  It is modified to include periodic connectivity.
+ */
+void mesh_q4_build_periodic_mesh(const long nb_cells, long *elem2elem)
+{
+    for (long id_e = 0; id_e < nb_cells; id_e++) {
+        for (int id_f = 0; id_f < Q4_FACE_PER_ELEM; id_f++) {
+            // On a boundary face
+            if (elem2elem[id_e * Q4_FACE_PER_ELEM + id_f] == -1) {
+                // Find opposite face id
+                long id_fo = q4_opp_face[id_f];
+                long id_n = id_e;
+                bool found = false;
+                for (long k = 0; k < nb_cells; k++) {
+                    // Next neighbour elem (through id_fo) is a boudary face
+                    if (elem2elem[id_n * Q4_FACE_PER_ELEM + id_fo] == -1) {
+                        elem2elem[id_e * Q4_FACE_PER_ELEM + id_f] = id_n;
+                        elem2elem[id_n * Q4_FACE_PER_ELEM + id_fo] = id_e;
+                        break;
+                    }
+                    // Jump on the next neighbour elem (through id_fo)
+                    id_n = elem2elem[id_n * Q4_FACE_PER_ELEM + id_fo];
+                }
+                check_perror(found, "mesh_q4_build_periodic_mesh",
+                             "periodic matching element not found!");
+                assert(found);
             }
         }
     }
