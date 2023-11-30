@@ -117,6 +117,8 @@ class AstroFVSolverCL(FVSolverCl):
             # Export solution at t=0
             self._export_data(ocl_queue, writer)
 
+            # w0_tot = [np.float64(cl_array.sum(self.wn_d[0 : self.mesh.nb_cells]).get())]
+            # times = [self.t]
             # Loop over time
             while self.iter < self.time_data.iter_max:
                 time_step(
@@ -129,13 +131,13 @@ class AstroFVSolverCL(FVSolverCl):
                     self.wn_d.data,
                     self.wnp1_d.data,
                 ).wait()
-
+                
                 ocl_prg.chem_step(
                     ocl_queue,
                     (self.mesh.nb_cells,),
                     None,
                     self.nh_d.data,
-                    self.wn_d.data,
+                    self.wnp1_d.data,
                     self.temp_d.data,
                     self.xi_d.data,
                 ).wait()
@@ -146,7 +148,6 @@ class AstroFVSolverCL(FVSolverCl):
                 # Update time
                 self.t += self.time_data.dt
                 self.iter += 1
-
                 # Export solution
                 if (
                     self.iter % self.export_frq == 0
@@ -154,12 +155,16 @@ class AstroFVSolverCL(FVSolverCl):
                 ):
                     self._export_data(ocl_queue, writer)
 
+                # w0_tot.append(np.float64(cl_array.sum(self.wn_d[0:self.mesh.nb_cells]).get()))
+                # times.append(self.t)
+
                 get_progressbar(
                     self.iter,
                     self.time_data.iter_max,
                     self.t,
                     self.time_data.tmax,
                 )
+        # print(w0_tot)
 
 
 def get_hmin(dim, dx, dy, dz):
@@ -173,11 +178,6 @@ def get_hmin(dim, dx, dy, dz):
 
     return cell_v / cell_s
 
-def get_hmin_2(dim, dx, dy, dz):
-    return dx / dim
-
-
-
 
 if __name__ == "__main__":
     # Physical constants (dim)
@@ -185,28 +185,30 @@ if __name__ == "__main__":
     phy_cst_c_vaccum = np.float64(3e8)
 
     # Physical values (dim)
-    phy_t = 100e6 * 365 * 24 *3600
+    phy_t = 100e6 * 365 * 24 * 3600
     phy_x = np.float64(6.6 * phy_unit_kpc * 2)
     phy_c = np.float64(phy_cst_c_vaccum / 1000.0)
     phy_w = np.float64(5e48)
 
+    dim = 3
     # WARNING: IF YOU CHANGE THE MESH ADAPT THESE QUANTITIES
     # Mesh values (adim)
-    dim = 3
+    mesh_nx = 65
+    mesh_ny = 65
+    mesh_nz = 65
     cfl = np.float64(0.8)
-    dx = np.float64(1.0 / 64.0)
-    dy = dx
-    dz = dx
+    dx = np.float64(1.0 / mesh_nx)
+    dy = np.float64(1.0 / mesh_ny)
+    dz = np.float64(1.0 / mesh_nz)
     c = np.float64(1.0)
-    # dt = cfl * np.float64(get_hmin(dim, dx, dy, dz)) / c
     dt = cfl * np.float64(get_hmin(dim, dx, dy, dz)) / c
 
     phy_dx = dx * phy_x
     phy_dy = dy * phy_x
     phy_dz = dz * phy_x
-    phy_dt = phy_x * dt / phy_c
-    phy_w0 = phy_w / (phy_dx * phy_dx * phy_dx) * phy_dt
-    phy_it= int(np.floor(phy_t / phy_dt))
+    phy_dt = dt * phy_x / phy_c
+    phy_w0 = phy_dt * phy_w / (phy_dx * phy_dx * phy_dx)
+    phy_it = int(np.floor(phy_t / phy_dt))
 
     print(f"phy_c : {phy_c:.6e}")
     print(f"phy_dx: {phy_dx:.6e}")
@@ -219,7 +221,8 @@ if __name__ == "__main__":
         dim,
         cl_src_file="./cl/astro/m1/main_stromgren_sphere.cl",
         cl_include_dirs=["./cl/astro/m1"],
-        cl_build_opts=["-cl-fast-relaxed-math"],
+        # cl_build_opts=["-cl-fast-relaxed-math"],
+        # cl_build_opts=["-cl-fast-relaxed-math"],
         cl_replace_map={
             "__PHY_C_DIM__": phy_c,
             "__PHY_DT_DIM__": phy_dt,
@@ -229,16 +232,18 @@ if __name__ == "__main__":
 
     # Build solver
     s = AstroFVSolverCL(
-        filename="./meshes/unit_cube_nx64_ny64_nz64.msh",
+        filename="./meshes/unit_cube_nx65_ny65_nz65.msh",
+        # filename="./meshes/unit_cube_nx3_ny3_nz3.msh",
         model=m,
         time_mode=FVTimeMode.FORCE_ITERMAX_FROM_CFL,
         tmax=0.5,
-        cfl=0.9,
+        cfl=cfl,
         dt=None,
-        iter_max=500,
+        iter_max=5000,
         use_muscl=False,
-        export_frq=40,
+        export_frq=100,
         use_double=True,
+        use_periodic_bd=True,
     )
 
     # Run solver

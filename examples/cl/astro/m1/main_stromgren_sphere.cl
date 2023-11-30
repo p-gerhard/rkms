@@ -38,6 +38,11 @@ void model_src(const real_t t, const real_t x[DIM], const real_t wn[M],
                real_t s[M])
 {
     m1_src_stromgren_sphere(t, x, s);
+
+    // WARNING: Divide by DT (adim) is required to fit test case
+    for (int k = 0; k < M; k++) {
+        s[k] = s[k] / DT;
+    }
 }
 
 void model_flux_num(const real_t wL[M], const real_t wR[M],
@@ -51,5 +56,4 @@ void model_flux_num_bd(const real_t wL[M], const real_t wR[M],
 {
     m1_num_flux_rusanov(wL, wL, vn, flux);
 }
-
 #endif

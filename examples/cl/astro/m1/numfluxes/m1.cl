@@ -50,7 +50,6 @@ inline void safe_normalise(const real_t u[3], real_t un[3], real_t *norm)
 
 void phy_flux(const real_t wn[4], const real_t vn[3], real_t flux[4])
 {
-
     const real_t u[3] = { wn[1], wn[2], wn[3] };
     real_t norm;
     real_t un[3];
@@ -61,13 +60,13 @@ void phy_flux(const real_t wn[4], const real_t vn[3], real_t flux[4])
     const real_t chi = get_chi(r);
 
 #ifdef USE_DOUBLE
-    const real_t t0 = 0.5;
-    const real_t t1 = (1. - chi);
-    const real_t t2 = (3. * chi - 1.);
+    const double t0 = 0.5;
+    const double t1 = (1. - chi);
+    const double t2 = (3. * chi - 1.);
 #else
-    const real_t t0 = 0.5f;
-    const real_t t1 = (1.f - chi);
-    const real_t t2 = (3.f * chi - 1.f);
+    const float t0 = 0.5f;
+    const float t1 = (1.f - chi);
+    const float t2 = (3.f * chi - 1.f);
 #endif
 
     // Diagonal terms
@@ -105,5 +104,4 @@ void m1_num_flux_rusanov(const real_t wL[4], const real_t wR[4],
     flux[2] = t0 * ((fL[2] + fR[2]) - (wR[2] - wL[2]));
     flux[3] = t0 * ((fL[3] + fR[3]) - (wR[3] - wL[3]));
 }
-
 #endif

@@ -52,13 +52,14 @@ if __name__ == "__main__":
         filename=filename,
         model=m,
         time_mode=FVTimeMode.FORCE_TMAX_FROM_CFL,
-        tmax=0.5,
+        tmax=1.5,
         cfl=0.9,
         dt=None,
         iter_max=100,
         use_muscl=True,
         export_frq=40,
         use_double=True,
+        use_periodic_bd=True
     )
 
     # Run solver

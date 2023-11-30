@@ -16,25 +16,16 @@
 static inline void m1_src_stromgren_sphere(const real_t t, const real_t x[DIM],
                                            real_t w[M])
 {
-#ifdef IS_2D
-    const real_t d =
-        (x[0] - SRC_X) * (x[0] - SRC_X) + (x[1] - SRC_Y) * (x[1] - SRC_Y);
-#else
-    const real_t d = (x[0] - SRC_X) * (x[0] - SRC_X) +
-                     (x[1] - SRC_Y) * (x[1] - SRC_Y) +
-                     (x[2] - SRC_Z) * (x[2] - SRC_Z);
-#endif
-
-    const real_t t0 = SRC_VACCUM / PHY_W0_DIM;
+    const real_t t0 = 1e-8 / PHY_W0_DIM;
 
 #ifdef USE_DOUBLE
-    const real_t t1 = 0.1;
-    const real_t t2 = 0.;
-    const real_t t3 = 1.;
+    const double t1 = 0.1;
+    const double t2 = 0.;
+    const double t3 = 1.;
 #else
-    const real_t t1 = 0.1f;
-    const real_t t2 = 0.f;
-    const real_t t3 = 1.f;
+    const float t1 = 0.1f;
+    const float t2 = 0.f;
+    const float t3 = 1.f;
 #endif
     const real_t t4 = t0 * t1;
 
@@ -54,8 +45,9 @@ static inline void m1_src_stromgren_sphere(const real_t t, const real_t x[DIM],
 #endif
     }
 
-    // WARNING: we assume that cells are cube or square (using only DX)
-    if (d < DX * DX) {
+    if ((x[0] >= SRC_X - DX / 2) && (x[0] <= SRC_X + DX / 2) &&
+        (x[1] >= SRC_Y - DY / 2) && (x[1] <= SRC_Y + DY / 2) &&
+        (x[2] >= SRC_Z - DZ / 2) && (x[2] <= SRC_Z + DZ / 2)) {
         w[0] = t3;
         w[1] = t2;
         w[2] = t2;

@@ -66,7 +66,7 @@ double beta_h(const double T)
 {
     double lambda = 2.0 * 157807.0 / T;
     double res =
-        21.11 * pow(T, -1.5) * exp(-lambda / 2.0) * pow(lambda, -1.089);
+        21.11 * pow(T, -3.0 / 2.0) * exp(-lambda / 2.0) * pow(lambda, -1.089);
     res /= pow(1.0 + pow(lambda / 0.354, 0.874), 1.01);
 
     // Convert to m^{3}.s^{-1}
@@ -77,7 +77,8 @@ double beta_h(const double T)
 // Collisional ionisation cooling in erg.cm^{3}.s^{-1} (Maselli et al. 2003)
 double ksi_h0(const double T)
 {
-    double res = 1.27e-21 * sqrt(T) / (1.0 + sqrt(T / 1.e5));
+    // double res = 1.27e-21 * sqrt(T) / (1.0 + sqrt(T / 1.e5));
+    double res = 1.27e-21 * sqrt(T) / (1.0 + pow(T / 1.e5, 0.5));
     res *= exp(-157809.1 / T);
 
     // Convert to erg.m^{3}.s^{-1}
@@ -107,7 +108,8 @@ double eta_h0(const double T)
 // 2003)
 double psi_h0(const double T)
 {
-    double res = 7.5e-19 / (1.0 + sqrt(T / 1.e5));
+    // double res = 7.5e-19 / (1.0 + sqrt(T / 1.e5));
+    double res = 7.5e-19 / (1.0 + pow(T / 1.e5, 0.5));
     res *= exp(-118348.0 / T);
 
     // Convert to erg.m^{3}.s^{-1}
@@ -172,7 +174,7 @@ double heating_rate(const double nH, const double x, const double x_n,
 double get_root_newton_raphson(const double a, const double b, const double c,
                                const double d)
 {
-    const double eps = 1e-6;
+    const double eps = 1e-8;
     double x = 0.5;
     double f = HUGE_VAL;
     double df, t2, t3;
@@ -209,7 +211,7 @@ __kernel void chem_step(__global const real_t *nh, __global real_t *wn,
     // Current cell ID
     const long id = get_global_id(0);
 
-    // Photon density
+    // PHY_W0_DIM is used to give first moment a physical dimension
     const double N = (double)(wn[id] * PHY_W0_DIM);
     const double N_pos = max(0., N);
 
@@ -276,10 +278,12 @@ __kernel void chem_step(__global const real_t *nh, __global real_t *wn,
 
     T_n = max(T_n, 10.);
 
-    // Update moments global buffer
-    const real_t ratio = (real_t)(N_n / N);
+    // Update zero order moment global buffer
+    // PHY_W0_DIM is used again to make solution vector dimensionless
     wn[id] = (real_t)(N_n / (PHY_W0_DIM));
 
+    // Update higher order moments global buffer
+    const real_t ratio = (real_t)(N_n / N);
     for (int k = 1; k < M; k++) {
         long imem = id + k * NGRID;
         wn[imem] = wn[imem] * ratio;
@@ -291,5 +295,4 @@ __kernel void chem_step(__global const real_t *nh, __global real_t *wn,
     // Update temperature global buffer
     temp[id] = (real_t)T_n;
 }
-
 #endif
