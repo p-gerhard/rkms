@@ -242,7 +242,7 @@ if __name__ == "__main__":
         iter_max=5000,
         use_muscl=False,
         export_frq=100,
-        use_double=False,
+        use_double=True,
         use_periodic_bd=False,
     )
 
