@@ -119,6 +119,7 @@ class AstroFVSolverCL(FVSolverCl):
 
             # w0_tot = [np.float64(cl_array.sum(self.wn_d[0 : self.mesh.nb_cells]).get())]
             # times = [self.t]
+
             # Loop over time
             while self.iter < self.time_data.iter_max:
                 time_step(
@@ -131,7 +132,8 @@ class AstroFVSolverCL(FVSolverCl):
                     self.wn_d.data,
                     self.wnp1_d.data,
                 ).wait()
-                
+
+                # WARNING: use here wnp1
                 ocl_prg.chem_step(
                     ocl_queue,
                     (self.mesh.nb_cells,),
@@ -190,9 +192,8 @@ if __name__ == "__main__":
     phy_c = np.float64(phy_cst_c_vaccum / 1000.0)
     phy_w = np.float64(5e48)
 
-    dim = 3
-    # WARNING: IF YOU CHANGE THE MESH ADAPT THESE QUANTITIES
     # Mesh values (adim)
+    dim = 3
     mesh_nx = 65
     mesh_ny = 65
     mesh_nz = 65
@@ -216,13 +217,13 @@ if __name__ == "__main__":
     print(f"phy_w0: {phy_w0:.6e}")
     print(f"phy_it: {phy_it}")
 
-    # Build Transport Model
+    # Build M1 Model
     m = M1(
         dim,
         cl_src_file="./cl/astro/m1/main_stromgren_sphere.cl",
         cl_include_dirs=["./cl/astro/m1"],
-        # cl_build_opts=["-cl-fast-relaxed-math"],
-        # cl_build_opts=["-cl-fast-relaxed-math"],
+        cl_build_opts=["-cl-fast-relaxed-math"],
+        # Values injected in "./cl/astro/m1/main_stromgren_sphere.cl"
         cl_replace_map={
             "__PHY_C_DIM__": phy_c,
             "__PHY_DT_DIM__": phy_dt,
@@ -232,18 +233,17 @@ if __name__ == "__main__":
 
     # Build solver
     s = AstroFVSolverCL(
-        filename="./meshes/unit_cube_nx65_ny65_nz65.msh",
-        # filename="./meshes/unit_cube_nx3_ny3_nz3.msh",
+        filename=f"./meshes/unit_cube_nx{mesh_nx}_ny{mesh_ny}_nz{mesh_nz}.msh",
         model=m,
         time_mode=FVTimeMode.FORCE_ITERMAX_FROM_CFL,
-        tmax=0.5,
+        tmax=None,
         cfl=cfl,
         dt=None,
         iter_max=5000,
         use_muscl=False,
         export_frq=100,
-        use_double=True,
-        use_periodic_bd=True,
+        use_double=False,
+        use_periodic_bd=False,
     )
 
     # Run solver
