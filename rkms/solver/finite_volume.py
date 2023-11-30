@@ -44,7 +44,15 @@ class FVTimeMode(Enum):
 
 class FVTimeData:
     def __init__(
-        self, time_mode, hmin, tmax, dt, cfl, iter_max, c_wave=1.0, dtype=np.float32
+        self,
+        time_mode,
+        hmin,
+        tmax,
+        dt,
+        cfl,
+        iter_max,
+        c_wave=1.0,
+        dtype=np.float32,
     ):
         # Set dtype:
         self.dtype = dtype
@@ -188,11 +196,12 @@ class FVSolverCl(SolverCl):
         export_idx: list[int] | None = None,
         export_frq: int | None = None,
         use_double: bool = False,
+        use_periodic_bd=False,
         **kwargs,
     ) -> None:
         # Set mesh object
         assert isinstance(filename, str)
-        self.mesh = MeshStructured(filename, use_double)
+        self.mesh = MeshStructured(filename, use_double, use_periodic_bd)
 
         # Set float/double dtype
         self.use_double = use_double

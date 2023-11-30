@@ -278,13 +278,20 @@ __kernel void solver_time_step(const real_t tnow, __global const real_t *x,
 
     // Constant across all cells: surface values of the face
 #ifdef IS_2D
-    const real_t dt_mult_ds_over_vol[4] = { DT * DY / VOL, DT * DY / VOL,
-                                            DT * DX / VOL, DT * DX / VOL };
+    // const real_t dt_mult_ds_over_vol[4] = { DT * DY / VOL, DT * DY / VOL,
+    //                                         DT * DX / VOL, DT * DX / VOL };
+                                            
+    const real_t dt_mult_ds_over_vol[4] = { DT / DX, DT / DX,
+                                            DT / DY, DT  / DY };
 #else
-    const real_t dt_mult_ds_over_vol[6] = {
-        DT * (DY * DZ) / VOL, DT * (DY * DZ) / VOL, DT * (DX * DY) / VOL,
-        DT * (DX * DY) / VOL, DT * (DZ * DY) / VOL, DT * (DZ * DY) / VOL
-    };
+    // const real_t dt_mult_ds_over_vol[6] = {
+    //     DT * (DY * DZ) / VOL, DT * (DY * DZ) / VOL, DT * (DX * DY) / VOL,
+    //     DT * (DX * DY) / VOL, DT * (DZ * DY) / VOL, DT * (DZ * DY) / VOL
+    // };
+
+    const real_t dt_mult_ds_over_vol[6] = { DT / DX, DT / DX, DT / DZ,
+                                            DT / DZ, DT / DX, DT / DX };
+
 #endif
 
     // Current cell: load center coordinates

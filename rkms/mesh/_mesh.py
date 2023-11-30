@@ -23,6 +23,7 @@ from .libmesh import (
     extract_cell_size,
     process_cells,
     process_nodes,
+    build_periodic_mesh,
 )
 
 MESH_INT_DTYPE = np.int64
@@ -31,7 +32,7 @@ MESH_TOL = 1e-14
 
 
 class MeshStructured:
-    def __init__(self, filename: str, use_double: bool = False):
+    def __init__(self, filename: str, use_double: bool = False, use_periodic_bd=False):
         assert isinstance(filename, str)
         self.filename = filename
 
@@ -95,6 +96,10 @@ class MeshStructured:
 
         # Build connectivity
         self.elem2elem = self._get_connectivity()
+
+        # Build periodic boundaries
+        if use_periodic_bd:
+            self._build_periodic_bd()
 
         # Compute some metrics
         self.hmin = self._get_hmin()
@@ -212,6 +217,10 @@ class MeshStructured:
     def _process_nodes(self) -> None:
         logger.info("Processing nodes...")
         process_nodes(self.nb_nodes, self.cell_size, self.nodes, self.is_2d)
+
+    def _build_periodic_bd(self):
+        logger.info("Building periodic boundaries...")
+        build_periodic_mesh(self.nb_cells, self.elem2elem, self.is_2d)
 
     def _cast_to_dtype(self, use_double):
         if not use_double:
