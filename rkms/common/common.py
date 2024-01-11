@@ -5,7 +5,6 @@ import numpy as np
 def is_num_type(val):
     return np.issubdtype(type(val), np.number)
 
-
 def pprint_dict(dict, header_msg="", indent=1):
     print("#{}:".format(header_msg))
     for k, v in sorted(dict.items()):
@@ -13,7 +12,7 @@ def pprint_dict(dict, header_msg="", indent=1):
             if np.issubdtype(type(v), np.integer):
                 print(indent * " " + "- {:<40} {:<12d}".format(k, v))
             if np.issubdtype(type(v), np.inexact):
-                print(indent * " " + "- {:<40} {:<12.6f}".format(k, v))
+                print(indent * " " + "- {:<40} {:<.6e}".format(k, v))
         else:
             print(indent * " " + "- {:<40} {}".format(k, v))
 

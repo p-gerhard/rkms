@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from enum import Enum
 import logging
+import inspect
 import os
 import time
 
@@ -226,15 +227,21 @@ class FVSolverCl(SolverCl):
 
         # Set export directory
         if export_dir is None:
-            self.export_dir = os.path.abspath(os.getcwd())
+            basename = os.path.splitext(
+                os.path.basename(inspect.stack()[-1].filename),
+            )[0]
+
+            self.export_dir = os.path.join(
+                os.getcwd(),
+                time.strftime(f"res_{basename}_%Y%m%d_%H%M%S"),
+            )
+            # self.export_dir = os.path.abspath(os.getcwd())
         else:
             assert isinstance(export_dir, str)
             self.export_dir = os.path.abspath(export_dir)
 
-        self.export_dir = os.path.join(
-            self.export_dir,
-            time.strftime("run_%Y%m%d_%H%M%S"),
-        )
+        if not os.path.exists(self.export_dir):
+            os.makedirs(self.export_dir)
 
         # Set export data filename
         self.export_data_file = XDMF_FILE_NAME
@@ -395,6 +402,9 @@ class FVSolverCl(SolverCl):
         writer.write_data(self.t, cell_data=cell_data)
 
     def _solve(self, ocl_queue, ocl_prg):
+        # Change dir now for exporter
+        os.chdir(self.export_dir)
+
         # Set OpenCL Kernel scalar arguments
         time_step = ocl_prg.solver_time_step
         time_step.set_scalar_arg_dtypes([self.dtype, None, None, None, None])
