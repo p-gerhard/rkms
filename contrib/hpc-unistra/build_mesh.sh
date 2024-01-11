@@ -21,7 +21,7 @@ MESH_NZ=65
 
 MESH_DIM=3
 MESH_GEO_FILE="/home2020/home/di/gerhard/rkms/data/geo/cuboid.geo"
-MESH_MSH_DIR="/home2020/home/di/gerhard/rkms/examples/meshes"
+MESH_MSH_DIR="/home2020/home/di/gerhard/rkms/examples/astro"
 MESH_BASE_NAME="unit_cube"
 
 echo_i() {
