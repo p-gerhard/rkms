@@ -43,7 +43,6 @@ echo_i "Moved to $git_root..."
 
 if command -v "module" >/dev/null 2>&1; then
     echo_i "Loading environment modules..."
-    module purge
     module load gmsh
     module load gcc
     module load cmake
