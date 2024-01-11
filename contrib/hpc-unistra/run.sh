@@ -14,7 +14,7 @@
 set -e
 
 VENV_NAME="venv-rkms"
-RKMS_FILE="/home2020/home/di/gerhard/rkms/examples/solve_astro_m1_stromgren_sphere.py"
+RKMS_FILE="/home2020/home/di/gerhard/rkms/examples/astro/solve_astro_stromgren_sphere.py"
 CURRENT_DIR="$(pwd)"
 
 echo_i() {
