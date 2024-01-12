@@ -70,10 +70,10 @@ class SolverCl(ABC):
 
     def _init_ocl(self):
         # Create OpenCL context and queue
-        ctx = cl.create_some_context(interactive=True)
+        self.ctx = cl.create_some_context(interactive=True)
 
-        ocl_queue = cl.CommandQueue(
-            ctx,
+        self.ocl_queue = cl.CommandQueue(
+            self.ctx,
             properties=cl.command_queue_properties.PROFILING_ENABLE,
         )
 
@@ -98,32 +98,31 @@ class SolverCl(ABC):
             src = src.replace("{}".format(key), val_fmt)
 
         # Create OpenCL program
-        ocl_prg = cl.Program(ctx, src)
+        self.ocl_prg = cl.Program(self.ctx, src)
         logger.info("Starting to build OpenCL target...")
         t_start = time.time()
-        ocl_prg.build(options=self.cl_build_opts)
+        self.ocl_prg.build(options=self.cl_build_opts)
         logger.info(f"OpenCL sucessfully built in {time.time() - t_start:>.3f} sec")
 
         print(src)
-        return ocl_queue, ocl_prg
 
     def run(self) -> None:
         # Initialize OpenCL contexte, queue and program (compile source)
-        ocl_queue, ocl_prg = self._init_ocl()
+        self._init_ocl()
 
         # Initialize OpenCL buffer
-        self._dalloc(ocl_queue)
+        self._dalloc(self.ocl_queue)
 
         # Initialize numpy buffers
         self._halloc()
 
         # Initialize OpenCL solution buffer
-        self._init_sol(ocl_queue, ocl_prg)
+        self._init_sol(self.ocl_queue, self.ocl_prg)
 
         # Execute the solver
         logger.info("Starting to solve...")
         t1 = time.time()
-        self._solve(ocl_queue, ocl_prg)
+        self._solve(self.ocl_queue, self.ocl_prg)
         logger.info(f"Computation done in {time.time() - t1:>.3f} sec")
 
     @abstractmethod
