@@ -1,0 +1,32 @@
+from acoustic._solver import *
+from acoustic._sn import *
+
+__all__ = [
+    "AcousticFVSolverCL",
+    "S4_2D",
+    "S8_2D",
+    "S16_2D",
+    "S32_2D",
+    "S64_2D",
+    "S128_2D",
+    "S256_2D",
+    "S512_2D",
+    "S6_3D",
+    "S14_3D",
+    "S26_3D",
+    "S38_3D",
+    "S50_3D",
+    "S74_3D",
+    "S86_3D",
+    "S110_3D",
+    "S146_3D",
+    "S170_3D",
+    "S194_3D",
+    "S230_3D",
+    "S266_3D",
+    "S302_3D",
+    "S350_3D",
+    "S434_3D",
+    "S590_3D",
+    "S770_3D",
+]

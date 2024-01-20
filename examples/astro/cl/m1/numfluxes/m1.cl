@@ -9,7 +9,7 @@
 #define TWO_OVER_THREE  (0.666666667f)
 #endif
 
-inline static float get_r(const real_t rho, const real_t norm)
+inline static real_t get_r(const real_t rho, const real_t norm)
 {
 #ifdef USE_DOUBLE
     return norm / max(rho, DBL_EPSILON);
