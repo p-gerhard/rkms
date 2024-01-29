@@ -6,6 +6,7 @@ from abc import ABC, abstractmethod
 
 import numpy as np
 import pyopencl as cl
+import inspect
 
 XDMF_FILE_NAME = "data.xmf"
 JSON_FILE_NAME = "config.json"
@@ -119,11 +120,27 @@ class SolverCl(ABC):
         # Initialize OpenCL solution buffer
         self._init_sol(self.ocl_queue, self.ocl_prg)
 
+        self.get_gpu_mem_size_mb()
+
         # Execute the solver
         logger.info("Starting to solve...")
         t1 = time.time()
         self._solve(self.ocl_queue, self.ocl_prg)
         logger.info(f"Computation done in {time.time() - t1:>.3f} sec")
+
+    def get_gpu_mem_size_mb(self):
+        buf_sizes = 0
+        buf_names = []
+
+        for name, value in inspect.getmembers(self):
+            if isinstance(value, cl.array.Array):
+                buf_names += [name]
+                buf_sizes += value.nbytes
+
+        buf_names = ", ".join(buf_names)
+        buf_sizes /= 1e6
+        logger.info(f"OpenCL buffer names: {buf_names}")
+        logger.info(f"OpenCL buffer total size: {buf_sizes:.3f} MB")
 
     @abstractmethod
     def _export_data(self, ocl_queue, writer) -> None:

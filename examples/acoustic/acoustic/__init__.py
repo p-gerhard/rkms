@@ -1,5 +1,6 @@
 from acoustic._solver import *
 from acoustic._sn import *
+from acoustic._m1 import *
 
 __all__ = [
     "AcousticFVSolverCL",
@@ -29,4 +30,6 @@ __all__ = [
     "S434_3D",
     "S590_3D",
     "S770_3D",
+    "M1_3D_LEBEDEV",
+    "M1_3D_TRIGAUSS",
 ]

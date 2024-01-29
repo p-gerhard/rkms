@@ -4,9 +4,10 @@ import logging
 
 import meshio
 import numpy as np
-
 from rkms.common import *
 
+from ._builder import MeshBuilder
+from ._common import MESH_FLOAT_DTYPE, MESH_INT_DTYPE, MESH_TOL
 from ._elements import H8_ELEM, Q4_ELEM
 
 logger = logging.getLogger(__name__)
@@ -19,29 +20,57 @@ logging.basicConfig(
 
 from .libmesh import (
     build_elem2elem,
+    build_periodic_mesh,
     check_elem2elem,
     extract_cell_size,
     process_cells,
     process_nodes,
-    build_periodic_mesh,
 )
-
-MESH_INT_DTYPE = np.int64
-MESH_FLOAT_DTYPE = np.float64
-MESH_TOL = 1e-14
 
 
 class MeshStructured:
-    def __init__(self, filename: str, use_double: bool = False, use_periodic_bd=False):
-        assert isinstance(filename, str)
-        self.filename = filename
-
+    def __init__(
+        self,
+        filename: str | None = None,
+        nx: int = 1,
+        ny: int = 1,
+        nz: int = 1,
+        xmin: float = 0.0,
+        xmax: float = 1.0,
+        ymin: float = 0.0,
+        ymax: float = 1.0,
+        zmin: float = 0.0,
+        zmax: float = 1.0,
+        use_periodic_bd: bool = False,
+    ):
         # Read mesh file using meshio library
-        logger.info("Reading mesh file...")
-        self.mesh = meshio.read(filename)
+        self.build_mesh = True
+        if filename:
+            self.filename = str(filename)
+            logger.info("Reading uniform mesh...")
+            self.mesh = meshio.read(filename)
+            self.build_mesh = False
+
+        # Build simple cuboid/rectangle mesh
+        if self.build_mesh:
+            logger.info("Building uniform mesh...")
+            self.mesh = MeshBuilder(
+                nx,
+                ny,
+                nz,
+                xmin,
+                xmax,
+                ymin,
+                ymax,
+                zmin,
+                zmax,
+            )
 
         # Create new reference on meshio "points" (nodes coordinates)
-        self.nodes = np.asarray(self.mesh.points, dtype=MESH_FLOAT_DTYPE)
+        self.nodes = np.asarray(
+            self.mesh.points,
+            dtype=MESH_FLOAT_DTYPE,
+        )
 
         # Detect if mesh is two or three dim
         self.is_2d = self._is_2d_mesh()
@@ -79,23 +108,29 @@ class MeshStructured:
         assert nb_loc_node == self.elem_data["NODE_PER_ELEM"]
 
         # Ensure data are C order in memory
-        self.cells = np.ravel(self.cells)
         self.nodes = np.ravel(self.nodes)
+        self.cells = np.ravel(self.cells)
 
-        # Extract cell size
-        self.cell_size = self._get_cell_size()
-        self.dx = self.cell_size[0]
-        self.dy = self.cell_size[1]
-        self.dz = self.cell_size[2] if not self.is_2d else np.float64(0.0)
-
-        # Build cell center and verify cells
-        self.cells_center = self._process_cells()
-
-        # Check nodes
-        self._process_nodes()
-
-        # Build connectivity
-        self.elem2elem = self._get_connectivity()
+        if self.build_mesh:
+            # WARNING: The values below are provided by Meshbuilder which is not
+            # the case when reading a mesh with meshio. So we will compute them
+            # below.
+            self.dx = self.mesh.dx
+            self.dy = self.mesh.dy
+            self.dz = self.mesh.dz
+            self.elem2elem = self.mesh.elem2elem
+            self.cells_center = self.mesh.cells_center
+        else:
+            self.cell_size = self._get_cell_size()
+            self.dx = self.cell_size[0]
+            self.dy = self.cell_size[1]
+            self.dz = self.cell_size[2] if not self.is_2d else np.float64(0.0)
+            # Build cell center and verify cells
+            self.cells_center = self._process_cells()
+            # Check nodes
+            self._process_nodes()
+            # Build connectivity
+            self.elem2elem = self._get_connectivity()
 
         # Build periodic boundaries
         if use_periodic_bd:
@@ -106,12 +141,15 @@ class MeshStructured:
         self.volume = self._get_volume()
         self.boundary_surface = self._get_boundary_surface()
 
-        # Cast data to propper dtype
-        self._cast_to_dtype(use_double)
-
         # Reshape point buffer a two-dimensional array (used when export by
         # meshio) [[ x,y,z], ..., [x,y,z]]
-        self.points = np.reshape(self.nodes, (self.nb_nodes, self.dim))
+        self.points = np.reshape(
+            self.nodes,
+            (
+                self.nb_nodes,
+                self.dim,
+            ),
+        )
 
         # Reshape cells buffer to a two-dimensional array (used when export by
         # meshio) [[id_node, id_node, ...], ...,  [id_node, id_node, ...]]
@@ -221,18 +259,6 @@ class MeshStructured:
     def _build_periodic_bd(self):
         logger.info("Building periodic boundaries...")
         build_periodic_mesh(self.nb_cells, self.elem2elem, self.is_2d)
-
-    def _cast_to_dtype(self, use_double):
-        if not use_double:
-            dtype = np.float32
-            self.nodes = dtype(self.nodes)
-            self.cells_center = dtype(self.cells_center)
-            self.dx = dtype(self.dx)
-            self.dy = dtype(self.dy)
-            self.dz = dtype(self.dz)
-            self.hmin = dtype(self.hmin)
-            self.volume = dtype(self.volume)
-            self.boundary_surface = dtype(self.boundary_surface)
 
     def _get_hmin(self):
         """

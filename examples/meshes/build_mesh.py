@@ -1,11 +1,14 @@
 from __future__ import annotations
+
+from __future__ import annotations
 import os
 import numpy as np
 
-from rkms.solver import FVTimeMode
+from rkms.model import PN
+from rkms.solver import FVTimeMode, FVSolverCl
 from rkms.common import pprint_dict
+from rkms.mesh import MeshStructured
 
-from acoustic import *
 
 # Configure environment variables for controlling pyopencl and NVIDIA platform
 # behaviors
@@ -25,34 +28,51 @@ os.environ["PYOPENCL_CTX"] = "0"
 
 if __name__ == "__main__":
     # Physical dimension of PN approximation
-    dim = 2
-    # mesh_file = "unit_cube_nx65_ny65_nz65.msh"
-    mesh_file = "unit_square_nx512_ny512.msh"
+    dim = 3
+    pn_order = 5
+    mesh_file = "unit_cube_nx65_ny65_nz65.msh"
 
     # Build PN Model
-    m = S64_2D(
-        cl_src_file="./cl/sn/main.cl",
-        cl_include_dirs=["./cl"],
+    model = PN(
+        pn_order,
+        dim,
+        cl_src_file="./cl/pn/main_beam.cl",
+        cl_include_dirs=["./cl//pn"],
         cl_build_opts=[
+            f"-D USE_SPHERICAL_HARMONICS_P{pn_order}",
             "-cl-fast-relaxed-math",
         ],
         cl_replace_map={},
     )
 
+    mesh = MeshStructured(
+        filename=None,
+        nx=1,
+        ny=2,
+        nz=3,
+        xmin=0.0,
+        xmax=1.0,
+        ymin=0.0,
+        ymax=1.0,
+        zmin=0.0,
+        zmax=1.0,
+        use_periodic_bd=False,
+    )
+
     # Build solver
-    s = AcousticFVSolverCL(
-        filename=mesh_file,
-        model=m,
+    s = FVSolverCl(
+        mesh=mesh,
+        model=model,
         time_mode=FVTimeMode.FORCE_ITERMAX_FROM_CFL,
         tmax=None,
         cfl=0.9,
         dt=None,
-        iter_max=1000,
-        use_muscl=False,
-        export_idx=[],
+        iter_max=400,
+        use_muscl=True,
+        export_idx=[0, 1, 2],
         export_frq=40,
-        use_double=False,
+        use_double=True,
     )
 
-    # Run solver
-    s.run()
+
+exit()

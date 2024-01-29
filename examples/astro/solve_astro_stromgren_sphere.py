@@ -117,7 +117,7 @@ if __name__ == "__main__":
             dim,
             cl_src_file="./cl/m1/main_stromgren_sphere.cl",
             cl_include_dirs=["./cl/m1"],
-            cl_build_opts=["-cl-fast-relaxed-math"],
+            cl_build_opts=["-cl-fast-relaxed-math"z],
             # Values injected in "./cl/m1/main_stromgren_sphere.cl"
             cl_replace_map={
                 "__PHY_C_DIM__": c_phy_value,

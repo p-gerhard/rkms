@@ -19,6 +19,22 @@
 #define CST_K_MAX        (70.f)
 #endif
 
+inline void safe_normalise(const real_t u[3], real_t un[3], real_t *norm)
+{
+    const real_t t0 = sqrt(u[0] * u[0] + u[1] * u[1] + u[2] * u[2]);
+
+#ifdef USE_DOUBLE
+    const double t1 = 1. / max(t0, DBL_EPSILON);
+#else
+    const float t1 = 1.f / max(t0, FLT_EPSILON);
+#endif
+    un[0] = u[0] * t1;
+    un[1] = u[1] * t1;
+    un[2] = u[2] * t1;
+
+    *norm = t0;
+}
+
 inline real_t get_r(const real_t rho, const real_t norm)
 {
 #ifdef USE_DOUBLE
@@ -42,7 +58,7 @@ inline real_t get_r(const real_t rho, const real_t norm)
 //     return chi;
 // }
 
-inline real_t get_chi_interp(const real_t r)
+inline real_t get_chi(const real_t r)
 {
 #ifdef USE_DOUBLE
     const double a0 = 0.762066949972264;
@@ -54,14 +70,14 @@ inline real_t get_chi_interp(const real_t r)
     const double chi_min = 0.33333333333;
     const double chi_max = 1.00000000000;
 #else
-    const double a0 = 0.762066949972264f;
-    const double a2 = 0.219172080193380f;
-    const double a4 = -0.259725400168378f;
-    const double a6 = 0.457105130221120f;
-    const double b0 = 2.28620084991677f;
-    const double b2 = -2.10758208969840f;
-    const double chi_min = 0.33333333333f;
-    const double chi_max = 1.00000000000f;
+    const float a0 = 0.762066949972264f;
+    const float a2 = 0.219172080193380f;
+    const float a4 = -0.259725400168378f;
+    const float a6 = 0.457105130221120f;
+    const float b0 = 2.28620084991677f;
+    const float b2 = -2.10758208969840f;
+    const float chi_min = 0.33333333333f;
+    const float chi_max = 1.00000000000f;
 #endif
 
     const real_t r2 = r * r;
@@ -105,22 +121,6 @@ inline void get_k_s(const real_t k[3], const real_t vn[3], real_t k_s[3])
     k_s[2] = k[2] - t0 * vn[2];
 }
 
-inline void safe_normalise(const real_t u[3], real_t un[3], real_t *norm)
-{
-    const real_t t0 = sqrt(u[0] * u[0] + u[1] * u[1] + u[2] * u[2]);
-
-#ifdef USE_DOUBLE
-    const double t1 = 1. / max(t0, DBL_EPSILON);
-#else
-    const float t1 = 1.f / max(t0, FLT_EPSILON);
-#endif
-    un[0] = u[0] * t1;
-    un[1] = u[1] * t1;
-    un[2] = u[2] * t1;
-
-    *norm = t0;
-}
-
 real_t get_a(const real_t rho, const real_t kn)
 {
 #ifdef USE_DOUBLE
@@ -128,7 +128,6 @@ real_t get_a(const real_t rho, const real_t kn)
     const double t1 = 0.1666666666666666666;
     const double t3 = 0.0194444444444444444;
     const double eps = 1e-6;
-
 #else
     const float t0 = 1.f;
     const float t1 = 0.16666666666666666666f;
@@ -139,12 +138,10 @@ real_t get_a(const real_t rho, const real_t kn)
     if (kn < eps) {
         // Serie expension at 0
         const real_t kn2 = kn * kn;
-        const real_t t3 = (t0 + t1 * kn2 + t2 * kn2 * kn2);
+        return rho * (t0 + t1 * kn2 + t2 * kn2 * kn2);
     } else {
-        const real_t t3 = kn / sinh(kn);
+        return rho * kn / sinh(kn);
     }
-
-    return rho * t3;
 }
 
 void phy_flux(const real_t wn[4], const real_t vn[3], real_t flux[4])
@@ -211,14 +208,14 @@ void m1_num_flux_kinetic(const real_t wL[4], const real_t wR[4],
     flux[2] = CST_ZERO;
     flux[3] = CST_ZERO;
 
-    for (unsigned int k = 0; k < QUAD_NB_V; k++) {
+    for (int k = 0; k < QUAD_NB_V; k++) {
         const real_t vx = quad_vi[3 * k + 0];
         const real_t vy = quad_vi[3 * k + 1];
         const real_t vz = quad_vi[3 * k + 2];
 #ifdef USE_QUAD_TRIGAUSS
-        const real_t wi = quad_wi[iv] / CST_PI4;
+        const real_t wi = quad_wi[k] / CST_PI4;
 #else
-        const real_t wi = quad_wi[iv];
+        const real_t wi = quad_wi[k];
 #endif
         const real_t v_dot_n = vx * vn[0] + vy * vn[1] + vz * vn[2];
 
@@ -248,7 +245,8 @@ static void m1_num_flux_kinetic_bd(const real_t wL[4], const real_t wR[4],
     get_k(wL, kL, &kLn);
     const real_t aL = get_a(wL[0], kLn);
 
-    real_t kR[3] get_k_s(kL, vn, kR);
+    real_t kR[3];
+    get_k_s(kL, vn, kR);
 
     real_t sum_vn = CST_ZERO;
     real_t int_fL = CST_ZERO;

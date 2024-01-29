@@ -20,18 +20,21 @@ static void sn_src_circle(const real_t t, const real_t x[DIM], real_t wn[M])
 
     if (t < SRC_TOFF) {
         if (d > SRC_R * SRC_R) {
-            for (int iw = 0; iw < M; iw++) {
-                wn[iw] = t0;
+            for (int k = 0; k < M; k++) {
+                wn[k] = t0;
             }
         } else {
-            for (int iw = 0; iw < M; iw++) {
-                wn[iw] = quad_wi[iw];
-                // wn[iw] = 1.0;
+            for (int k = 0; k < M; k++) {
+#ifdef USE_QUAD_UNIFORM
+                wn[k] = QUAD_WI;
+#else
+                wn[k] = quad_wi[k];
+#endif
             }
         }
     } else {
-        for (int iw = 0; iw < M; iw++) {
-            wn[iw] = t0;
+        for (int k = 0; k < M; k++) {
+            wn[k] = t0;
         }
     }
 }

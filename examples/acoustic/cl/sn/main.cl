@@ -11,12 +11,12 @@
 #define DIM      __DIM__
 #define C_WAVE   __C_WAVE__
 
-#define BETA     (1.)
-#define ALPHA    (0.)
+#define BETA     (0.)
+#define ALPHA    (1.)
 #define SRC_X    (0.5)
 #define SRC_Y    (0.5)
 #define SRC_Z    (0.5)
-#define SRC_R    (0.)
+#define SRC_R    (0.1)
 #define SRC_TOFF (1.)
 
 #if DIM == 2
@@ -105,6 +105,12 @@ __kernel void sn_reconstruct_macro_field(__global const real_t *wn,
 {
     const long id = get_global_id(0);
 
+    // Recopy buffer localy
+    real_t w_loc[M];
+    for (int k = 0; k < M; k++) {
+        w_loc[k] = wn[id + k * NGRID];
+    }
+
     real_t w = CST_ZERO;
     real_t i_x = CST_ZERO;
     real_t i_y = CST_ZERO;
@@ -116,17 +122,16 @@ __kernel void sn_reconstruct_macro_field(__global const real_t *wn,
 /* Integration over S1 or S2 */
 #pragma unroll
     for (int k = 0; k < M; k++) {
-        const long imem = id + k * NGRID;
-
-#ifdef IS_2D
-        w += QUAD_WI * wn[imem];
+#ifdef USE_QUAD_UNIFORM
+        real_t c0 = QUAD_WI * w_loc[k];
 #else
-        w += quad_wi[k] * wn[imem];
+        real_t c0 = quad_wi[k] * w_loc[k];
 #endif
-        i_x += w * quad_vi[DIM * k + 0];
-        i_y += w * quad_vi[DIM * k + 1];
+        w += c0;
+        i_x += c0 * quad_vi[DIM * k + 0];
+        i_y += c0 * quad_vi[DIM * k + 1];
 #ifndef IS_2D
-        i_z += w * quad_vi[DIM * k + 2];
+        i_z += c0 * quad_vi[DIM * k + 2];
 #endif
     }
 

@@ -7,6 +7,7 @@ import pyopencl as cl
 import pyopencl.array as cl_array
 from rkms.solver import FVSolverCl, FVTimeMode, get_progressbar
 from rkms.model import SN
+import matplotlib.pyplot as plt
 
 
 class AcousticFVSolverCL(FVSolverCl):
@@ -153,7 +154,7 @@ class AcousticFVSolverCL(FVSolverCl):
                         )
                     )
 
-                    times.append(self.t)
+                times.append(self.t)
 
                 # Export solution
                 if (
@@ -168,4 +169,8 @@ class AcousticFVSolverCL(FVSolverCl):
                     self.t,
                     self.time_data.tmax,
                 )
-        print(w0_tot)
+
+        plt.plot(times, w0_tot)
+        plt.show()
+
+    # print(w0_tot)

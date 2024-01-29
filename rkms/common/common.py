@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import numpy as np
+import inspect 
 
 def is_num_type(val):
     return np.issubdtype(type(val), np.number)
@@ -16,6 +17,18 @@ def pprint_dict(dict, header_msg="", indent=1):
         else:
             print(indent * " " + "- {:<40} {}".format(k, v))
 
+
+
+def cast_data(instance, dtype=np.float32):
+    for name, val in inspect.getmembers(instance):
+        # Cast scalar float members
+        if isinstance(val, (float, np.float32, np.float64)):
+            setattr(instance, name, dtype(val))
+
+        # Cast array float members
+        if isinstance(val, np.ndarray):
+            if val.dtype in (np.float32, np.float64):
+                setattr(instance, name, dtype(val))
 
 # def __dump_parameters(self, print=True, dump=True):
 #     dict = json.loads(

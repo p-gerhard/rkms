@@ -25,13 +25,13 @@ os.environ["PYOPENCL_CTX"] = "0"
 
 if __name__ == "__main__":
     # Physical dimension of PN approximation
-    dim = 2
-    # mesh_file = "unit_cube_nx65_ny65_nz65.msh"
-    mesh_file = "unit_square_nx512_ny512.msh"
+    dim = 3
+    mesh_file = "unit_cube_nx65_ny65_nz65.msh"
+    # mesh_file = "unit_square_nx512_ny512.msh"
 
     # Build PN Model
-    m = S64_2D(
-        cl_src_file="./cl/sn/main.cl",
+    m = M1_3D_LEBEDEV(
+        cl_src_file="./cl/m1/main.cl",
         cl_include_dirs=["./cl"],
         cl_build_opts=[
             "-cl-fast-relaxed-math",
@@ -49,8 +49,7 @@ if __name__ == "__main__":
         dt=None,
         iter_max=1000,
         use_muscl=False,
-        export_idx=[],
-        export_frq=40,
+        export_frq=10,
         use_double=False,
     )
 
