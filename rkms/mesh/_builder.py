@@ -69,9 +69,6 @@ class MeshBuilder:
         # than meshio.mesh meshio.mesh, bit hacky could be improved.
         self.cells_dict = {cell[0]: cell[1] for cell in self.cells}
 
-        self.plot()
-        exit()
-
     def get_dim(self):
         return (
             1
@@ -218,6 +215,25 @@ class MeshBuilder:
             print("Error cant plot too many nodes")
             return
 
+        id_edges = [[0, 1]]
+        if self.dim > 1:
+            id_edges += [
+                [1, 2],
+                [2, 3],
+                [3, 0],
+            ]
+        if self.dim > 2:
+            id_edges += [
+                [4, 5],
+                [5, 6],
+                [6, 7],
+                [7, 4],
+                [0, 4],
+                [1, 5],
+                [2, 6],
+                [3, 7],
+            ]
+
         # Plot mesh nodes and associated index
         count = 0
         for k in range(self.nz + 1):
@@ -246,6 +262,8 @@ class MeshBuilder:
                         size=10,
                         zorder=2,
                         color="b",
+                        horizontalalignment="left",
+                        verticalalignment="bottom"
                     )
                     count += 1
 
@@ -260,74 +278,19 @@ class MeshBuilder:
                         self.ny_c,
                         self.nz_c,
                     )
-                    id_edge = [
-                        [0, 1],
-                        [1, 2],
-                        [2, 3],
-                        [3, 2],
-                        [3, 2],
-                    ]
-
                     n = self.cells[0][1][idx]
-                    # ax.plot([x1, x2], [y1, y2], [z1, z2], c='b')
-                    p1 = self.points[n[0]]
-                    p2 = self.points[n[1]]
 
-                    plt.plot(
-                        [p1[0], p2[0]],
-                        [p1[1], p2[1]],
-                        [p1[2], p2[2]],
-                        "ro-",
-                    )
+                    for id_edge in id_edges:
+                        p1 = self.points[n[id_edge[0]]]
+                        p2 = self.points[n[id_edge[1]]]
 
-                    p1 = self.points[n[1]]
-                    p2 = self.points[n[2]]
-
-                    plt.plot(
-                        [p1[0], p2[0]],
-                        [p1[1], p2[1]],
-                        [p1[2], p2[2]],
-                        "ro-",
-                    )
-
-                    p1 = self.points[n[2]]
-                    p2 = self.points[n[3]]
-
-                    plt.plot(
-                        [p1[0], p2[0]],
-                        [p1[1], p2[1]],
-                        [p1[2], p2[2]],
-                        "ro-",
-                    )
-
-                    p1 = self.points[n[3]]
-                    p2 = self.points[n[0]]
-
-                    plt.plot(
-                        [p1[0], p2[0]],
-                        [p1[1], p2[1]],
-                        [p1[2], p2[2]],
-                        "ro-",
-                    )
-
-                    # print(n)
-                    # ax.scatter(
-                    #     self.points[idx][0],
-                    #     self.points[idx][1],
-                    #     self.points[idx][2],
-                    #     marker="o",
-                    #     color="blue",
-                    # )
-                    # ax.text(
-                    #     self.points[idx][0],
-                    #     self.points[idx][1],
-                    #     self.points[idx][2],
-                    #     f"{count}",
-                    #     size=10,
-                    #     zorder=2,
-                    #     color="b",
-                    # )
-                    # count += 1
+                        plt.plot(
+                            [p1[0], p2[0]],
+                            [p1[1], p2[1]],
+                            [p1[2], p2[2]],
+                            "ko-",
+                            linewidth=1,
+                        )
 
         # Plot mesh cells center and associated index
         count = 0
@@ -346,7 +309,7 @@ class MeshBuilder:
                         self.cells_center[idx][0],
                         self.cells_center[idx][1],
                         self.cells_center[idx][2],
-                        marker="o",
+                        marker="+",
                         color="red",
                         s=20,
                     )
@@ -358,6 +321,8 @@ class MeshBuilder:
                         size=10,
                         zorder=2,
                         color="r",
+                        horizontalalignment="left",
+                        verticalalignment="bottom"
                     )
                     count += 1
 

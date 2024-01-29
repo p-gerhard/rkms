@@ -47,8 +47,8 @@ if __name__ == "__main__":
 
     mesh = MeshStructured(
         filename=None,
-        nx=1,
-        ny=2,
+        nx=3,
+        ny=3,
         nz=3,
         xmin=0.0,
         xmax=1.0,

@@ -6,6 +6,7 @@ import numpy as np
 from rkms.model import M1, PN
 from rkms.solver import FVTimeMode
 from rkms.common import pprint_dict
+from rkms.mesh import MeshStructured
 
 from astro import AstroFVSolverCL
 
@@ -67,7 +68,6 @@ if __name__ == "__main__":
     use_pn = True
     pn_order = 3
 
-
     # Adim values
     dim = 3
     mesh_nx = 65
@@ -117,7 +117,7 @@ if __name__ == "__main__":
             dim,
             cl_src_file="./cl/m1/main_stromgren_sphere.cl",
             cl_include_dirs=["./cl/m1"],
-            cl_build_opts=["-cl-fast-relaxed-math"z],
+            cl_build_opts=["-cl-fast-relaxed-math"],
             # Values injected in "./cl/m1/main_stromgren_sphere.cl"
             cl_replace_map={
                 "__PHY_C_DIM__": c_phy_value,
@@ -145,8 +145,22 @@ if __name__ == "__main__":
         )
 
     # Build solver
+    mesh = MeshStructured(
+        filename=None,
+        nx=mesh_nx,
+        ny=mesh_ny,
+        nz=mesh_nz,
+        xmin=0.0,
+        xmax=1.0,
+        ymin=0.0,
+        ymax=1.0,
+        zmin=0.0,
+        zmax=1.0,
+        use_periodic_bd=False,
+    )
+
     s = AstroFVSolverCL(
-        filename=mesh_file,
+        mesh=mesh,
         model=m,
         time_mode=FVTimeMode.FORCE_ITERMAX_FROM_CFL,
         tmax=None,
@@ -160,7 +174,6 @@ if __name__ == "__main__":
         use_periodic_bd=False,
         use_chemistry=True,
     )
-    
 
     # Run solver
     s.run()

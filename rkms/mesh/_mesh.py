@@ -45,6 +45,8 @@ class MeshStructured:
     ):
         # Read mesh file using meshio library
         self.build_mesh = True
+
+
         if filename:
             self.filename = str(filename)
             logger.info("Reading uniform mesh...")
@@ -53,6 +55,7 @@ class MeshStructured:
 
         # Build simple cuboid/rectangle mesh
         if self.build_mesh:
+            self.filename = "None"
             logger.info("Building uniform mesh...")
             self.mesh = MeshBuilder(
                 nx,
