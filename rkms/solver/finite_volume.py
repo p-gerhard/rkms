@@ -211,6 +211,8 @@ class FVSolverCl(SolverCl):
         self.dtype = np.float32
         if self.use_double:
             self.dtype = np.float64
+        else:
+            self.cl_build_opts.append["-cl-single-precision-constant"]
 
         # Set time data
         self.time_data = FVTimeData(
