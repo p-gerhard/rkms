@@ -1,5 +1,6 @@
 import os
 
+from rkms.mesh import MeshStructured
 from rkms.model import PN
 from rkms.solver import *
 
@@ -25,11 +26,24 @@ if __name__ == "__main__":
     # Order of PN approximation
     order = 11
 
-    # Load mesh file
-    if dim == 2:
-        filename = "unit_square_nx64_ny64.msh"
-    else:
-        filename = "unit_cube_nx100_ny100_nz100.msh"
+    # Build Mesh
+    mesh_nx = 65
+    mesh_ny = 65
+    mesh_nz = 65 if dim == 3 else 0
+
+    mesh = MeshStructured(
+        filename=None,
+        nx=mesh_nx,
+        ny=mesh_ny,
+        nz=mesh_nz,
+        xmin=0.0,
+        xmax=1.0,
+        ymin=0.0,
+        ymax=1.0,
+        zmin=0.0,
+        zmax=1.0,
+        use_periodic_bd=False,
+    )
 
     # Build PN Model
     m = PN(
@@ -51,7 +65,7 @@ if __name__ == "__main__":
 
     # Build solver
     s = FVSolverCl(
-        filename=filename,
+        mesh=mesh,
         model=m,
         time_mode=FVTimeMode.FORCE_ITERMAX_FROM_CFL,
         tmax=1,

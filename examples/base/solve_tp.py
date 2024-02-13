@@ -2,6 +2,7 @@ import os
 
 from rkms.model import TP
 from rkms.solver import *
+from rkms.mesh import MeshStructured
 
 # Configure environment variables for controlling pyopencl and NVIDIA platform
 # behaviors
@@ -22,11 +23,24 @@ if __name__ == "__main__":
     # Physical dimension of PN approximation
     dim = 3
 
-    # Load mesh file
-    if dim == 2:
-        filename = "unit_square_nx64_ny64.msh"
-    else:
-        filename = "unit_cube_nx100_ny100_nz100.msh"
+    # Build Mesh
+    mesh_nx = 65
+    mesh_ny = 65
+    mesh_nz = 65 if dim == 3 else 0
+
+    mesh = MeshStructured(
+        filename=None,
+        nx=mesh_nx,
+        ny=mesh_ny,
+        nz=mesh_nz,
+        xmin=0.0,
+        xmax=1.0,
+        ymin=0.0,
+        ymax=1.0,
+        zmin=0.0,
+        zmax=1.0,
+        use_periodic_bd=False,
+    )
 
     # Build Transport Model
     m = TP(
@@ -46,7 +60,7 @@ if __name__ == "__main__":
 
     # Build solver
     s = FVSolverCl(
-        filename=filename,
+        mesh=mesh,
         model=m,
         time_mode=FVTimeMode.FORCE_TMAX_FROM_CFL,
         tmax=1.5,
@@ -56,7 +70,6 @@ if __name__ == "__main__":
         use_muscl=True,
         export_frq=40,
         use_double=True,
-        use_periodic_bd=True,
     )
 
     # Run solver

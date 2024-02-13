@@ -1,14 +1,14 @@
 from __future__ import annotations
 
 import os
-import numpy as np
 
-from rkms.model import M1, PN
-from rkms.solver import FVTimeMode
+import numpy as np
+from astro import AstroFVSolverCL
+
 from rkms.common import pprint_dict
 from rkms.mesh import MeshStructured
-
-from astro import AstroFVSolverCL
+from rkms.model import M1, PN
+from rkms.solver import FVTimeMode
 
 # Configure environment variables for controlling pyopencl and NVIDIA platform
 # behaviors
@@ -68,13 +68,30 @@ if __name__ == "__main__":
     use_pn = True
     pn_order = 3
 
-    # Adim values
+    # CFL
+    cfl = 0.8
+
+    # Build Mesh
     dim = 3
     mesh_nx = 65
     mesh_ny = 65
-    mesh_nz = 65
-    mesh_file = f"unit_cube_nx{mesh_nx}_ny{mesh_ny}_nz{mesh_nz}.msh"
-    cfl = 0.8
+    mesh_nx = 65
+    mesh_ny = 65
+    mesh_nz = 65 if dim == 3 else 0
+
+    mesh = MeshStructured(
+        filename=None,
+        nx=mesh_nx,
+        ny=mesh_ny,
+        nz=mesh_nz,
+        xmin=0.0,
+        xmax=1.0,
+        ymin=0.0,
+        ymax=1.0,
+        zmin=0.0,
+        zmax=1.0,
+        use_periodic_bd=False,
+    )
 
     # Dim values
     x_phy_value = 6.6 * 3.086e19 * 2
@@ -144,21 +161,6 @@ if __name__ == "__main__":
             },
         )
 
-    # Build solver
-    mesh = MeshStructured(
-        filename=None,
-        nx=mesh_nx,
-        ny=mesh_ny,
-        nz=mesh_nz,
-        xmin=0.0,
-        xmax=1.0,
-        ymin=0.0,
-        ymax=1.0,
-        zmin=0.0,
-        zmax=1.0,
-        use_periodic_bd=False,
-    )
-
     s = AstroFVSolverCL(
         mesh=mesh,
         model=m,
@@ -171,7 +173,6 @@ if __name__ == "__main__":
         export_idx=[0, 1, 2],
         export_frq=100,
         use_double=False,
-        use_periodic_bd=False,
         use_chemistry=True,
     )
 

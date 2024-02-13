@@ -19,6 +19,7 @@ setup(
         "meshio[all]",
         "numpy",
         "pyopencl[test]",
+        "matplotlib"
     ],
     package_data={
         "rkms": [
