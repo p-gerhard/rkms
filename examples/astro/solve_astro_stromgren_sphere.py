@@ -75,8 +75,6 @@ if __name__ == "__main__":
     dim = 3
     mesh_nx = 65
     mesh_ny = 65
-    mesh_nx = 65
-    mesh_ny = 65
     mesh_nz = 65 if dim == 3 else 0
 
     mesh = MeshStructured(
