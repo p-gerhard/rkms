@@ -7,16 +7,77 @@ import pyopencl as cl
 import pyopencl.array as cl_array
 from rkms.solver import FVSolverCl, FVTimeMode, get_progressbar
 
+def read_astro_file_bin(filename, nx, ny, nz):
+    """
+    Read a binary file containing 3D data in slabs.
+
+    Parameters:
+    - filename (str): The name of the binary file.
+    - nx (int): The number of elements in the x-direction.
+    - ny (int): The number of elements in the y-direction.
+    - nz (int): The number of elements in the z-direction.
+
+    Returns:
+    - data (ndarray): 3D numpy array (ravel) containing the read data.
+    """
+    assert nx >= 0 and ny >= 0 and nz >= 0
+
+    size_t_mapping = {
+        4: (np.float32, np.int32),
+        8: (np.float64, np.int64),
+    }
+
+    nb_elem_slab_nxny = nx * ny
+
+    try:
+        with open(filename, "rb") as f:
+            # Read header information
+            header = np.fromfile(f, dtype=np.int32, count=6)
+
+            # Determine the size of each element in bytes
+            size_t = header[0]
+            float_t, int_t = size_t_mapping.get(size_t, (None, None))
+
+            # Allocate memory buffer for the 3D data
+            data = np.zeros((nx, ny, nz), dtype=float_t)
+
+            # Read the binary data slab by slab
+            for k in range(nz):
+                # Read the size of the current memory slab
+                mem_size = np.fromfile(f, dtype=int_t, count=1)[0]
+
+                # Calculate the number of elements in the slab
+                nb_elem = int(mem_size / size_t)
+                assert (
+                    nb_elem == nb_elem_slab_nxny
+                ), "Mismatch in the number of elements in the slab"
+
+                # Read the actual data and reshape it to the desired dimensions
+                data[k, :, :] = np.fromfile(f, dtype=float_t, count=nb_elem).reshape(
+                    nx, ny
+                )
+
+                # Dummy read to move to the next slab
+                mem_size = np.fromfile(f, dtype=int_t, count=1)[0]
+
+            # Return the 3D data (ravel) read from the binary file
+            return data.ravel()
+    except Exception as e:
+        print(f"Error opening or reading the file: {e}. Buffer set to None.")
+        return None
 
 class AstroFVSolverCL(FVSolverCl):
     def __init__(
         self,
         use_chemistry=False,
+        init_buffer_map={},
         *args,
         **kwargs,
     ) -> None:
         super().__init__(*args, **kwargs)
+
         self.use_chemistry = use_chemistry
+        self.init_buffer_map = init_buffer_map
 
     def _halloc(self) -> None:
         # Solver host buffers are allocated by FVSolverCl class
@@ -51,6 +112,11 @@ class AstroFVSolverCL(FVSolverCl):
 
             # Set device buffer storing neutral fraction values at t_n
             self.xi_d = cl_array.empty(ocl_queue, size, dtype=self.dtype)
+            
+        for key, val in self.init_buffer_map.items():
+            device_buff_name = f"{key}_d"
+            if hasattr(self, device_buff_name) and val is not None:
+                setattr(self, device_buff_name, cl_array.to_device(ocl_queue,  val))
 
     @property
     def cl_build_opts(self):

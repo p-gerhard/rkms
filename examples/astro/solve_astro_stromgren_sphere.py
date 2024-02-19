@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 
 import numpy as np
-from astro import AstroFVSolverCL
+from astro import AstroFVSolverCL, read_astro_file_bin
 
 from rkms.common import pprint_dict
 from rkms.mesh import MeshStructured
@@ -73,9 +73,9 @@ if __name__ == "__main__":
 
     # Build Mesh
     dim = 3
-    mesh_nx = 65
-    mesh_ny = 65
-    mesh_nz = 65 if dim == 3 else 0
+    mesh_nx = 128
+    mesh_ny = 128
+    mesh_nz = 128 if dim == 3 else 0
 
     mesh = MeshStructured(
         filename=None,
@@ -159,6 +159,11 @@ if __name__ == "__main__":
             },
         )
 
+    init_buffer_map = {
+    "nh": read_astro_file_bin("density.bin", mesh_nx, mesh_ny, mesh_nz),
+}
+
+
     s = AstroFVSolverCL(
         mesh=mesh,
         model=m,
@@ -172,6 +177,7 @@ if __name__ == "__main__":
         export_frq=100,
         use_double=False,
         use_chemistry=True,
+        init_buffer_map=init_buffer_map,
     )
 
     # Run solver

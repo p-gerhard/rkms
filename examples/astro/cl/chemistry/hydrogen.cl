@@ -232,10 +232,15 @@ __kernel void chem_init_sol(__global real_t *nh, __global real_t *temp,
     // Current cell ID
     const long id = get_global_id(0);
 
+
     // Stromgren sphere test case values
     xi[id] = (real_t)1.2e-3;
-    nh[id] = (real_t)1e3;
+        
     temp[id] = (real_t)100.;
+    
+    // TO COMMENT IF MAP IS LOADED
+    nh[id] = (real_t)1e3;
+
 }
 
 __kernel void chem_step(__global const real_t *nh, __global real_t *wn,
