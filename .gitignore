@@ -45,6 +45,7 @@ env*/
 *.xml
 *.xdmf
 *.pvsm
+*.bin
 
 # Object files
 *.o

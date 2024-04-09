@@ -122,20 +122,8 @@ class Model:
         assert isinstance(value, int) and value >= 0
         self.__nb_macro_to_reconstruct = value
 
-    def get_params_to_print(self):
-        params = {
-            "Name": self.__class__.__name__,
-            "Order": self.order,
-            "Dim": self.dim,
-            "CL file": self.cl_src_file,
-            "CL inject values": self.cl_replace_map,
-            "CL include folder": self.cl_include_dirs,
-            "Nb. of variable": self.m,
-            "Nb. macro vars to reconstruct": self.nb_macro_to_reconstruct,
-        }
-
-        return params
-
-    def print_infos(self):
-        params = self.get_params_to_print()
-        pprint_dict(params, header_msg="MODEL INFOS")
+    def to_dict(self, extra_values={}):
+        filtered_name = []
+        dict = serialize(self, filtered_name)
+        dict.update(extra_values)
+        return dict

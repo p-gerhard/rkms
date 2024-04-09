@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import numpy as np
-import inspect 
+import inspect
+
 
 def is_num_type(val):
     return np.issubdtype(type(val), np.number)
+
 
 def pprint_dict(dict, header_msg="", indent=1):
     print("#{}:".format(header_msg))
@@ -18,7 +20,6 @@ def pprint_dict(dict, header_msg="", indent=1):
             print(indent * " " + "- {:<40} {}".format(k, v))
 
 
-
 def cast_data(instance, dtype=np.float32):
     for name, val in inspect.getmembers(instance):
         # Cast scalar float members
@@ -29,6 +30,55 @@ def cast_data(instance, dtype=np.float32):
         if isinstance(val, np.ndarray):
             if val.dtype in (np.float32, np.float64):
                 setattr(instance, name, dtype(val))
+
+
+# def serialize(obj, filtered_names=None):
+#     if filtered_names is None:
+#         filtered_names = []
+
+#     data = {}
+#     for name, value in vars(obj).items():
+#         if name not in filtered_names and not callable(value):
+#             if isinstance(value, (int, float, str, list, dict, bool, np.generic)):
+#                 data[name] = value
+#     return data
+
+
+def cast_numpy_to_python(data):
+    if isinstance(data, dict):
+        return {k: cast_numpy_to_python(v) for k, v in data.items()}
+    elif isinstance(data, (list, tuple)):
+        return [cast_numpy_to_python(item) for item in data]
+    elif isinstance(data, (np.integer, np.floating)):
+        return data.item()
+    elif isinstance(data, (int, float, str, bool)):
+        return data
+    else:
+        return "WARNING_NOT_DISPLAYED"
+
+
+def serialize(obj, filtered_names=None):
+
+    if filtered_names is None:
+        filtered_names = []
+
+    data = {}
+    for name, value in inspect.getmembers(obj):
+        if (
+            not name.startswith("_")
+            and name not in filtered_names
+            and not inspect.ismethod(value)
+        ):
+            if isinstance(value, np.integer):
+                data[name] = int(value)
+            elif isinstance(value, np.floating):
+                data[name] = float(value)
+            elif isinstance(value, (int, float, str, list, bool)):
+                data[name] = value
+            elif isinstance(value, dict):
+                data[name] = cast_numpy_to_python(value)
+    return data
+
 
 # def __dump_parameters(self, print=True, dump=True):
 #     dict = json.loads(

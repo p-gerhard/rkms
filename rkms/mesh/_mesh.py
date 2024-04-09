@@ -46,12 +46,20 @@ class MeshStructured:
         # Read mesh file using meshio library
         self.build_mesh = True
 
-
         if filename:
             self.filename = str(filename)
             logger.info("Reading uniform mesh...")
             self.mesh = meshio.read(filename)
             self.build_mesh = False
+            self.nx = None
+            self.ny = None
+            self.nz = None
+            self.xmin = None
+            self.ymin = None
+            self.zmin = None
+            self.xmax = None
+            self.ymax = None
+            self.zmax = None
 
         # Build simple cuboid/rectangle mesh
         if self.build_mesh:
@@ -68,6 +76,15 @@ class MeshStructured:
                 zmin,
                 zmax,
             )
+            self.nx = nx
+            self.ny = ny
+            self.nz = nz
+            self.xmin = xmin
+            self.ymin = ymin
+            self.zmin = zmin
+            self.xmax = xmax
+            self.ymax = ymax
+            self.zmax = zmax
 
         # Create new reference on meshio "points" (nodes coordinates)
         self.nodes = np.asarray(
@@ -136,7 +153,8 @@ class MeshStructured:
             self.elem2elem = self._get_connectivity()
 
         # Build periodic boundaries
-        if use_periodic_bd:
+        self.use_periodic_bd = use_periodic_bd
+        if self.use_periodic_bd:
             self._build_periodic_bd()
 
         # Compute some metrics
@@ -159,8 +177,6 @@ class MeshStructured:
         self.cells = np.reshape(
             self.cells, (self.nb_cells, self.elem_data["NODE_PER_ELEM"])
         )
-
-        self.print_infos()
 
     def _is_2d_mesh(self) -> bool:
         """
@@ -331,23 +347,8 @@ class MeshStructured:
             for idx_elem in range(self.nb_cells)
         )
 
-    def get_params_to_print(self):
-        params = {
-            "Filename": self.filename,
-            "Dimension": self.dim,
-            "Cell type": self.cell_name,
-            "Node number": self.nb_nodes,
-            "Cell number": self.nb_cells,
-            "Size dx": self.dx,
-            "Size dy": self.dy,
-            "Size dz": self.dz,
-            "Size hmin": self.hmin,
-            "Mesh boundary surface": self.boundary_surface,
-            "Mesh volume": self.volume,
-        }
-
-        return params
-
-    def print_infos(self):
-        params = self.get_params_to_print()
-        pprint_dict(params, header_msg="MESH INFOS")
+    def to_dict(self, extra_values={}):
+        filtered_name = ["elem_data"]
+        dict = serialize(self, filtered_name)
+        dict.update(extra_values)
+        return dict

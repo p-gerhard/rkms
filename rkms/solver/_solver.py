@@ -141,7 +141,12 @@ class SolverCl(ABC):
         buf_sizes /= 1e6
         logger.info(f"OpenCL buffer names: {buf_names}")
         logger.info(f"OpenCL buffer total size: {buf_sizes:.3f} MB")
+    
+    @abstractmethod
+    def to_dict(self, extra_values={}):
+        pass
 
     @abstractmethod
     def _export_data(self, ocl_queue, writer) -> None:
         pass
+

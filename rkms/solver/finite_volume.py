@@ -1,19 +1,20 @@
 from __future__ import annotations
 
-from enum import Enum
-import logging
 import inspect
+import json
+import logging
 import os
 import time
+from enum import Enum
 
 import meshio
 import numpy as np
 import pyopencl as cl
 import pyopencl.array as cl_array
 
+from rkms.common import cast_data, serialize
 from rkms.mesh import MeshStructured
 from rkms.model import Model
-from rkms.common import cast_data
 
 from ._solver import (
     JSON_FILE_NAME,
@@ -83,6 +84,12 @@ class FVTimeData:
         assert (
             np.abs(self.iter_max - self._compute_iter_max()) < np.finfo(self.dtype).eps
         )
+
+    def to_dict(self, extra_values={}):
+        filtered_name = []
+        dict = serialize(self, filtered_name)
+        dict.update(extra_values)
+        return dict
 
     def _compute_cfl(self):
         return self.dtype(self.dt * self.c_wave / self.hmin)
@@ -276,6 +283,25 @@ class FVSolverCl(SolverCl):
         assert isinstance(use_muscl, bool)
         self.use_muscl = use_muscl
 
+        # Change dir for exporter
+        os.chdir(self.export_dir)
+        with open(self.export_config_file, "w") as f:
+            json.dump(self.to_dict(), f, indent=4)
+
+    def to_dict(self, extra_values={}):
+        filtered_name = []
+        solver_dict = serialize(self, filtered_name)
+        solver_dict.update(extra_values)
+
+        dict = {
+            "mesh": self.mesh.to_dict(),
+            "model": self.model.to_dict(),
+            "time_data": self.time_data.to_dict(),
+            "solver": solver_dict,
+        }
+
+        return dict
+
     def _halloc(self) -> None:
         # Solution buffer size
         size = self.model.m * self.mesh.nb_cells
@@ -380,9 +406,6 @@ class FVSolverCl(SolverCl):
         writer.write_data(self.t, cell_data=cell_data)
 
     def _solve(self, ocl_queue, ocl_prg):
-        # Change dir now for exporter
-        os.chdir(self.export_dir)
-
         # Set OpenCL Kernel scalar arguments
         time_step = ocl_prg.solver_time_step
         time_step.set_scalar_arg_dtypes([self.dtype, None, None, None, None])

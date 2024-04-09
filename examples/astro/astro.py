@@ -6,6 +6,7 @@ import numpy as np
 import pyopencl as cl
 import pyopencl.array as cl_array
 from rkms.solver import FVSolverCl, FVTimeMode, get_progressbar
+from rkms.common import serialize, pprint_dict
 
 def read_astro_file_bin(filename, nx, ny, nz):
     """
@@ -78,6 +79,20 @@ class AstroFVSolverCL(FVSolverCl):
 
         self.use_chemistry = use_chemistry
         self.init_buffer_map = init_buffer_map
+
+    def to_dict(self, extra_values={}):
+        filtered_name = ['init_buffer_map']
+        solver_dict = serialize(self, filtered_name)
+        solver_dict.update(extra_values)
+
+        dict = {
+            "mesh": self.mesh.to_dict(),
+            "model": self.model.to_dict(),
+            "time_data": self.time_data.to_dict(),
+            "solver": solver_dict,
+        }
+        return dict
+
 
     def _halloc(self) -> None:
         # Solver host buffers are allocated by FVSolverCl class
@@ -172,9 +187,6 @@ class AstroFVSolverCL(FVSolverCl):
         writer.write_data(self.t, cell_data=cell_data)
 
     def _solve(self, ocl_queue, ocl_prg) -> None:
-        # Change dir now for exporter
-        os.chdir(self.export_dir)
-
         # Set OpenCL Kernel scalar arguments
         time_step = ocl_prg.solver_time_step
         time_step.set_scalar_arg_dtypes([self.dtype, None, None, None, None])
