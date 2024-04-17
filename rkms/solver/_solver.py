@@ -34,12 +34,22 @@ def get_mem_size_mb(tag, *buffers):
     logger.info(f"{tag} buffer size: {size:.3f} MB")
 
 
+def get_export_dir(dir=None):
+    if dir is None:
+        basename = os.path.splitext(
+            os.path.basename(inspect.stack()[-1].filename),
+        )[0]
+
+        return os.path.join(
+            os.getcwd(),
+            time.strftime(f"res_{basename}_%Y%m%d_%H%M%S"),
+        )
+    else:
+        assert isinstance(dir, str)
+        return os.path.abspath(dir)
+
+
 class SolverCl(ABC):
-    
-    @property
-    @abstractmethod
-    def export_dir(self, dir: str | None = None) -> str:
-        pass
 
     @property
     @abstractmethod
@@ -131,6 +141,10 @@ class SolverCl(ABC):
         self.get_gpu_mem_size_mb()
 
         # Change dir for exporter
+        self.export_dir = get_export_dir()
+        if not os.path.exists(self.export_dir):
+            os.makedirs(self.export_dir)
+
         os.chdir(self.export_dir)
         with open("config.json", "w") as f:
             json.dump(self.to_dict(), f, indent=4)
@@ -154,7 +168,7 @@ class SolverCl(ABC):
         buf_sizes /= 1e6
         logger.info(f"OpenCL buffer names: {buf_names}")
         logger.info(f"OpenCL buffer total size: {buf_sizes:.3f} MB")
-    
+
     @abstractmethod
     def to_dict(self, extra_values={}):
         pass
@@ -162,4 +176,3 @@ class SolverCl(ABC):
     @abstractmethod
     def _export_data(self, ocl_queue, writer) -> None:
         pass
-

@@ -234,9 +234,6 @@ class FVSolverCl(SolverCl):
         assert isinstance(model, Model)
         self.model = model
 
-        if not os.path.exists(self.export_dir):
-            os.makedirs(self.export_dir)
-
         # Set export data filename
         self.export_data_file = XDMF_FILE_NAME
 
@@ -267,21 +264,6 @@ class FVSolverCl(SolverCl):
         # Set MUSCL slope limiter
         assert isinstance(use_muscl, bool)
         self.use_muscl = use_muscl
-    
-    @property
-    def export_dir(self, dir=None):
-        if dir is None:
-            basename = os.path.splitext(
-                os.path.basename(inspect.stack()[-1].filename),
-            )[0]
-
-            return os.path.join(
-                os.getcwd(),
-                time.strftime(f"res_{basename}_%Y%m%d_%H%M%S"),
-            )
-        else:
-            assert isinstance(dir, str)
-            return os.path.abspath(dir)
     
     def to_dict(self, extra_values={}):
         filtered_name = []
