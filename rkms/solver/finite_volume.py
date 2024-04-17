@@ -234,21 +234,6 @@ class FVSolverCl(SolverCl):
         assert isinstance(model, Model)
         self.model = model
 
-        # Set export directory
-        if export_dir is None:
-            basename = os.path.splitext(
-                os.path.basename(inspect.stack()[-1].filename),
-            )[0]
-
-            self.export_dir = os.path.join(
-                os.getcwd(),
-                time.strftime(f"res_{basename}_%Y%m%d_%H%M%S"),
-            )
-            # self.export_dir = os.path.abspath(os.getcwd())
-        else:
-            assert isinstance(export_dir, str)
-            self.export_dir = os.path.abspath(export_dir)
-
         if not os.path.exists(self.export_dir):
             os.makedirs(self.export_dir)
 
@@ -282,12 +267,22 @@ class FVSolverCl(SolverCl):
         # Set MUSCL slope limiter
         assert isinstance(use_muscl, bool)
         self.use_muscl = use_muscl
+    
+    @property
+    def export_dir(self, dir=None):
+        if dir is None:
+            basename = os.path.splitext(
+                os.path.basename(inspect.stack()[-1].filename),
+            )[0]
 
-        # Change dir for exporter
-        os.chdir(self.export_dir)
-        with open(self.export_config_file, "w") as f:
-            json.dump(self.to_dict(), f, indent=4)
-
+            return os.path.join(
+                os.getcwd(),
+                time.strftime(f"res_{basename}_%Y%m%d_%H%M%S"),
+            )
+        else:
+            assert isinstance(dir, str)
+            return os.path.abspath(dir)
+    
     def to_dict(self, extra_values={}):
         filtered_name = []
         solver_dict = serialize(self, filtered_name)

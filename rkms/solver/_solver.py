@@ -1,12 +1,14 @@
 from __future__ import annotations
 
+import inspect
+import json
 import logging
+import os
 import time
 from abc import ABC, abstractmethod
 
 import numpy as np
 import pyopencl as cl
-import inspect
 
 XDMF_FILE_NAME = "data.xmf"
 JSON_FILE_NAME = "config.json"
@@ -33,6 +35,12 @@ def get_mem_size_mb(tag, *buffers):
 
 
 class SolverCl(ABC):
+    
+    @property
+    @abstractmethod
+    def export_dir(self, dir: str | None = None) -> str:
+        pass
+
     @property
     @abstractmethod
     def cl_src_file(self) -> None:
@@ -121,6 +129,11 @@ class SolverCl(ABC):
         self._init_sol(self.ocl_queue, self.ocl_prg)
 
         self.get_gpu_mem_size_mb()
+
+        # Change dir for exporter
+        os.chdir(self.export_dir)
+        with open("config.json", "w") as f:
+            json.dump(self.to_dict(), f, indent=4)
 
         # Execute the solver
         logger.info("Starting to solve...")
