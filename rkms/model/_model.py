@@ -126,4 +126,7 @@ class Model:
         filtered_name = []
         dict = serialize(self, filtered_name)
         dict.update(extra_values)
+        print(self.__class__.__name__)
+        dict["name"]= self.__class__.__name__
+
         return dict

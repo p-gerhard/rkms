@@ -144,7 +144,8 @@ class SolverCl(ABC):
         self.export_dir = get_export_dir()
         if not os.path.exists(self.export_dir):
             os.makedirs(self.export_dir)
-
+        
+        # Dump simulation config data
         os.chdir(self.export_dir)
         with open("config.json", "w") as f:
             json.dump(self.to_dict(), f, indent=4)
