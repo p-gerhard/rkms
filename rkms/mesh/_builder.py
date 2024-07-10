@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.lines as mlines
 import logging
 
 from ._common import MESH_FLOAT_DTYPE, MESH_INT_DTYPE
@@ -73,9 +74,7 @@ class MeshBuilder:
         return (
             1
             if self.ny == 0 and self.nz == 0
-            else 2
-            if self.ny != 0 and self.nz == 0
-            else 3
+            else 2 if self.ny != 0 and self.nz == 0 else 3
         )
 
     def get_idx(self, i, j, k, nx, ny, nz):
@@ -211,6 +210,26 @@ class MeshBuilder:
         fig = plt.figure()
         ax = fig.add_subplot(111, projection="3d")
 
+        mrk_nodes = mlines.Line2D(
+            [],
+            [],
+            color="red",
+            marker="+",
+            linestyle="None",
+            markersize=10,
+            label="Cell ID",
+        )
+
+        mrk_cells = mlines.Line2D(
+            [],
+            [],
+            color="blue",
+            marker="o",
+            linestyle="None",
+            markersize=10,
+            label="Node ID",
+        )
+
         if self.nx > 4 and self.ny > 4 and self.nz > 4:
             print("Error cant plot too many nodes")
             return
@@ -263,7 +282,7 @@ class MeshBuilder:
                         zorder=2,
                         color="b",
                         horizontalalignment="left",
-                        verticalalignment="bottom"
+                        verticalalignment="bottom",
                     )
                     count += 1
 
@@ -322,7 +341,7 @@ class MeshBuilder:
                         zorder=2,
                         color="r",
                         horizontalalignment="left",
-                        verticalalignment="bottom"
+                        verticalalignment="bottom",
                     )
                     count += 1
 
@@ -330,4 +349,5 @@ class MeshBuilder:
         ax.set_xlabel("X-axis")
         ax.set_ylabel("Y-axis")
         ax.set_zlabel("Z-axis")
+        plt.legend(handles=[mrk_nodes, mrk_cells])
         plt.show()
