@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from rkms.mesh import MeshBuilder
+from rkms.mesh import MeshStructured
 import numpy as np
 
 
@@ -22,7 +22,8 @@ if __name__ == "__main__":
     mesh_ny = 2
     mesh_nz = 2 if dim == 3 else 0
 
-    mesh = MeshBuilder(
+    mesh = MeshStructured(
+        filename=None,
         nx=mesh_nx,
         ny=mesh_ny,
         nz=mesh_nz,
@@ -32,6 +33,7 @@ if __name__ == "__main__":
         ymax=1.0,
         zmin=0.0,
         zmax=1.0,
+        use_periodic_bd=True,
     )
 
     mesh.plot()
