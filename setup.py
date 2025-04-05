@@ -1,5 +1,5 @@
-from skbuild import setup
 from setuptools import find_packages
+from skbuild import setup
 
 setup(
     packages=find_packages(),
@@ -15,12 +15,7 @@ setup(
     zip_safe=False,
     python_requires=">=3.7",
     include_package_data=True,
-    install_requires=[
-        "meshio[all]",
-        "numpy",
-        "pyopencl[test]",
-        "matplotlib"
-    ],
+    install_requires=["meshio[all]", "numpy", "pyopencl[test]", "matplotlib"],
     package_data={
         "rkms": [
             "solver/cl/**/*.cl",

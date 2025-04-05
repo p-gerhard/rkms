@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from rkms.mesh import MeshStructured
-import numpy as np
 
 if __name__ == "__main__":
     # Build Mesh
@@ -33,24 +32,22 @@ if __name__ == "__main__":
     nbs = mesh.elem2elem.reshape(-1, nb_neighbors)
 
     # Cells on -X face
-    # nbs[mesh.cells_center[:, 0] == mesh.xmin + dx_offset, 1] = -1 
+    # nbs[mesh.cells_center[:, 0] == mesh.xmin + dx_offset, 1] = -1
 
     # Cells on +X face
     # nbs[mesh.cells_center[:, 0] == mesh.xmax - dx_offset, 0] = -1
 
     # Cells on -Y face
-    nbs[mesh.cells_center[:, 1] == mesh.ymin + dy_offset, 3] = -1 
+    nbs[mesh.cells_center[:, 1] == mesh.ymin + dy_offset, 3] = -1
 
     # Cells on +Y face
     nbs[mesh.cells_center[:, 1] == mesh.ymax - dy_offset, 2] = -1
 
-
     if dim == 3:
         # Cells on -Z face
-        nbs[mesh.cells_center[:, 2] == mesh.zmin + dz_offset, 5] = -1  
+        nbs[mesh.cells_center[:, 2] == mesh.zmin + dz_offset, 5] = -1
 
         # Cells on +Z face
-        nbs[mesh.cells_center[:, 2] == mesh.zmax - dz_offset, 4] = -1 
+        nbs[mesh.cells_center[:, 2] == mesh.zmax - dz_offset, 4] = -1
 
     mesh.elem2elem = nbs.flatten()
-    

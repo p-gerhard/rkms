@@ -1,6 +1,6 @@
-from acoustic._solver import *
-from acoustic._sn import *
 from acoustic._m1 import *
+from acoustic._sn import *
+from acoustic._solver import *
 
 __all__ = [
     "AcousticFVSolverCL",

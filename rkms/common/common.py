@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-import numpy as np
 import inspect
+
+import numpy as np
 
 
 def is_num_type(val):
@@ -9,15 +10,15 @@ def is_num_type(val):
 
 
 def pprint_dict(dict, header_msg="", indent=1):
-    print("#{}:".format(header_msg))
+    print(f"#{header_msg}:")
     for k, v in sorted(dict.items()):
         if is_num_type(v):
             if np.issubdtype(type(v), np.integer):
-                print(indent * " " + "- {:<40} {:<12d}".format(k, v))
+                print(indent * " " + f"- {k:<40} {v:<12d}")
             if np.issubdtype(type(v), np.inexact):
-                print(indent * " " + "- {:<40} {:<.6e}".format(k, v))
+                print(indent * " " + f"- {k:<40} {v:<.6e}")
         else:
-            print(indent * " " + "- {:<40} {}".format(k, v))
+            print(indent * " " + f"- {k:<40} {v}")
 
 
 def cast_data(instance, dtype=np.float32):
@@ -58,17 +59,12 @@ def cast_numpy_to_python(data):
 
 
 def serialize(obj, filtered_names=None):
-
     if filtered_names is None:
         filtered_names = []
 
     data = {}
     for name, value in inspect.getmembers(obj):
-        if (
-            not name.startswith("_")
-            and name not in filtered_names
-            and not inspect.ismethod(value)
-        ):
+        if not name.startswith("_") and name not in filtered_names and not inspect.ismethod(value):
             if isinstance(value, np.integer):
                 data[name] = int(value)
             elif isinstance(value, np.floating):

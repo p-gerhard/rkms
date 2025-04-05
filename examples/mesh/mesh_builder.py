@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-from rkms.mesh import MeshStructured
 import numpy as np
+
+from rkms.mesh import MeshStructured
 
 
 def get_idx(i, j, k, nx, ny, nz):
@@ -63,9 +64,7 @@ if __name__ == "__main__":
     print("# Cells")
     print(80 * "#")
 
-    print(
-        "\n # Example: mapping for cell mesh indexes (i,j,k) get global cell id (rkms OpenCL global_id)"
-    )
+    print("\n # Example: mapping for cell mesh indexes (i,j,k) get global cell id (rkms OpenCL global_id)")
     for k in range(mesh.nz):
         for j in range(mesh.ny):
             for i in range(mesh.nx):
@@ -79,9 +78,7 @@ if __name__ == "__main__":
                 )
                 print(f"(i,j,k) = ({i},{j},{k}) gives {idx} (global_id)")
 
-    print(
-        "\n # Example: mapping for global cell id (rkms OpenCL global_id) get cell mesh indexes (i,j,k)"
-    )
+    print("\n # Example: mapping for global cell id (rkms OpenCL global_id) get cell mesh indexes (i,j,k)")
     for idx in range(mesh_nx * mesh_ny * mesh_nz):
         i, j, k = get_ijk(idx, mesh_nx, mesh_ny, mesh_nz)
         print(f"global_id = {idx} gives (i,j,k) = ({i},{j},{k})")

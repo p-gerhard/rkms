@@ -1,7 +1,8 @@
-import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib.lines as mlines
 import logging
+
+import matplotlib.lines as mlines
+import matplotlib.pyplot as plt
+import numpy as np
 
 from ._common import MESH_FLOAT_DTYPE, MESH_INT_DTYPE
 
@@ -71,11 +72,7 @@ class MeshBuilder:
         self.cells_dict = {cell[0]: cell[1] for cell in self.cells}
 
     def get_dim(self):
-        return (
-            1
-            if self.ny == 0 and self.nz == 0
-            else 2 if self.ny != 0 and self.nz == 0 else 3
-        )
+        return 1 if self.ny == 0 and self.nz == 0 else 2 if self.ny != 0 and self.nz == 0 else 3
 
     def get_idx(self, i, j, k, nx, ny, nz):
         return i + j * (nx) + k * (nx) * (ny)

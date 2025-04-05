@@ -1,5 +1,5 @@
-import pytest
 import numpy as np
+
 from rkms.mesh import *
 
 MESH_TOL = 1e-6
@@ -49,6 +49,7 @@ def test_mesh_q4_unit_square_nx2_ny2():
         (nb_cells_ref, Q4_ELEM.get("PHY_DIM")),
     )
     assert np.array_equal(cells_center_ref, cells_center)
+
 
 def test_mesh_h8_unit_cube_nx2_ny2_nz2():
     nb_cells_ref = 8

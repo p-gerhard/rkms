@@ -38,9 +38,7 @@ def get_hmin(dim, dx, dy, dz):
     return cell_v / cell_s
 
 
-def get_dim_coeff(
-    dim, cfl, dx_adim, dy_adim, dz_adim, c_adim, x_phy_value, c_phy_value
-):
+def get_dim_coeff(dim, cfl, dx_adim, dy_adim, dz_adim, c_adim, x_phy_value, c_phy_value):
     dx_adim = np.float64(dx_adim)
     dy_adim = np.float64(dy_adim)
     dz_adim = np.float64(dz_adim)
@@ -48,11 +46,7 @@ def get_dim_coeff(
     x_phy_value = np.float64(x_phy_value)
     c_phy_value = np.float64(c_phy_value)
 
-    dt_adim = (
-        np.float64(cfl)
-        * np.float64(get_hmin(dim, dx_adim, dy_adim, dz_adim))
-        / np.float64(c_adim)
-    )
+    dt_adim = np.float64(cfl) * np.float64(get_hmin(dim, dx_adim, dy_adim, dz_adim)) / np.float64(c_adim)
 
     dx_dim = dx_adim * x_phy_value
     dy_dim = dy_adim * x_phy_value

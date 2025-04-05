@@ -1,10 +1,7 @@
 from __future__ import annotations
 
-import inspect
-import json
 import logging
 import os
-import time
 from enum import Enum
 
 import meshio
@@ -20,7 +17,6 @@ from ._solver import (
     JSON_FILE_NAME,
     XDMF_FILE_NAME,
     SolverCl,
-    get_mem_size_mb,
     get_progressbar,
 )
 
@@ -81,9 +77,7 @@ class FVTimeData:
         assert np.abs(self.cfl - self._compute_cfl()) < np.finfo(np.float32).eps
 
         # Check iter_max is coherent with tmax and dt
-        assert (
-            np.abs(self.iter_max - self._compute_iter_max()) < np.finfo(self.dtype).eps
-        )
+        assert np.abs(self.iter_max - self._compute_iter_max()) < np.finfo(self.dtype).eps
 
     def to_dict(self, extra_values={}):
         filtered_name = []
@@ -220,9 +214,7 @@ class FVSolverCl(SolverCl):
             self.dtype = np.float64
 
         # Set time data
-        self.time_data = FVTimeData(
-            time_mode, self.mesh.hmin, tmax, dt, cfl, iter_max, c_wave
-        )
+        self.time_data = FVTimeData(time_mode, self.mesh.hmin, tmax, dt, cfl, iter_max, c_wave)
 
         # Set time
         self.t = self.dtype(0.0)
@@ -264,7 +256,7 @@ class FVSolverCl(SolverCl):
         # Set MUSCL slope limiter
         assert isinstance(use_muscl, bool)
         self.use_muscl = use_muscl
-    
+
     def to_dict(self, extra_values={}):
         filtered_name = []
         solver_dict = serialize(self, filtered_name)
@@ -326,13 +318,13 @@ class FVSolverCl(SolverCl):
         #     opts.append("-cl-single-precision-constant")
 
         # Add solver include dirs
-        opts += ["-I {}".format(dir) for dir in self.cl_include_dirs]
+        opts += [f"-I {dir}" for dir in self.cl_include_dirs]
 
         # Add model build options
         opts += self.model.cl_build_opts
 
         # Add model include dirs
-        opts += ["-I {}".format(dir) for dir in self.model.cl_include_dirs]
+        opts += [f"-I {dir}" for dir in self.model.cl_include_dirs]
 
         return list(set(opts))
 
@@ -374,10 +366,7 @@ class FVSolverCl(SolverCl):
 
     def _export_data(self, ocl_queue, writer):
         nc = self.mesh.nb_cells
-        cell_data = {
-            "w_{}".format(k): {self.mesh.cell_name: self.wn_h[k * nc : (k + 1) * nc]}
-            for k in self.export_idx
-        }
+        cell_data = {f"w_{k}": {self.mesh.cell_name: self.wn_h[k * nc : (k + 1) * nc]} for k in self.export_idx}
 
         cl.enqueue_copy(ocl_queue, self.wn_h, self.wn_d.data).wait()
         writer.write_data(self.t, cell_data=cell_data)
@@ -389,9 +378,7 @@ class FVSolverCl(SolverCl):
 
         with meshio.xdmf.TimeSeriesWriter(self.export_data_file) as writer:
             # Export mesh
-            writer.write_points_cells(
-                self.mesh.points, [(self.mesh.cell_name, self.mesh.cells)]
-            )
+            writer.write_points_cells(self.mesh.points, [(self.mesh.cell_name, self.mesh.cells)])
 
             # Export solution at t=0
             self._export_data(ocl_queue, writer)
@@ -417,12 +404,7 @@ class FVSolverCl(SolverCl):
                 self.iter += 1
 
                 # Export solution
-                if (
-                    self.iter % self.export_frq == 0
-                    or self.iter == self.time_data.iter_max
-                ):
+                if self.iter % self.export_frq == 0 or self.iter == self.time_data.iter_max:
                     self._export_data(ocl_queue, writer)
 
-                get_progressbar(
-                    self.iter, self.time_data.iter_max, self.t, self.time_data.tmax
-                )
+                get_progressbar(self.iter, self.time_data.iter_max, self.t, self.time_data.tmax)

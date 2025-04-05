@@ -2,10 +2,8 @@ from __future__ import annotations
 
 import os
 
-import numpy as np
 from astro import AstroFVSolverCL
 
-from rkms.common import pprint_dict
 from rkms.mesh import MeshStructured
 from rkms.model import PN
 from rkms.solver import FVTimeMode

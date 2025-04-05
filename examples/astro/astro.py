@@ -1,12 +1,13 @@
 from __future__ import annotations
 
-import os
 import meshio
 import numpy as np
 import pyopencl as cl
 import pyopencl.array as cl_array
-from rkms.solver import FVSolverCl, FVTimeMode, get_progressbar
-from rkms.common import serialize, pprint_dict
+
+from rkms.common import serialize
+from rkms.solver import FVSolverCl, get_progressbar
+
 
 def read_astro_file_bin(filename, nx, ny, nz):
     """
@@ -49,14 +50,10 @@ def read_astro_file_bin(filename, nx, ny, nz):
 
                 # Calculate the number of elements in the slab
                 nb_elem = int(mem_size / size_t)
-                assert (
-                    nb_elem == nb_elem_slab_nxny
-                ), "Mismatch in the number of elements in the slab"
+                assert nb_elem == nb_elem_slab_nxny, "Mismatch in the number of elements in the slab"
 
                 # Read the actual data and reshape it to the desired dimensions
-                data[k, :, :] = np.fromfile(f, dtype=float_t, count=nb_elem).reshape(
-                    nx, ny
-                )
+                data[k, :, :] = np.fromfile(f, dtype=float_t, count=nb_elem).reshape(nx, ny)
 
                 # Dummy read to move to the next slab
                 mem_size = np.fromfile(f, dtype=int_t, count=1)[0]
@@ -66,6 +63,7 @@ def read_astro_file_bin(filename, nx, ny, nz):
     except Exception as e:
         print(f"Error opening or reading the file: {e}. Buffer set to None.")
         return None
+
 
 class AstroFVSolverCL(FVSolverCl):
     def __init__(
@@ -81,7 +79,7 @@ class AstroFVSolverCL(FVSolverCl):
         self.init_buffer_map = init_buffer_map
 
     def to_dict(self, extra_values={}):
-        filtered_name = ['init_buffer_map']
+        filtered_name = ["init_buffer_map"]
         solver_dict = serialize(self, filtered_name)
         solver_dict.update(extra_values)
 
@@ -92,7 +90,6 @@ class AstroFVSolverCL(FVSolverCl):
             "solver": solver_dict,
         }
         return dict
-
 
     def _halloc(self) -> None:
         # Solver host buffers are allocated by FVSolverCl class
@@ -127,15 +124,15 @@ class AstroFVSolverCL(FVSolverCl):
 
             # Set device buffer storing neutral fraction values at t_n
             self.xi_d = cl_array.empty(ocl_queue, size, dtype=self.dtype)
-            
+
         for key, val in self.init_buffer_map.items():
             device_buff_name = f"{key}_d"
             if hasattr(self, device_buff_name) and val is not None:
-                 # Check if val is a numpy array and cast it to self.dtype if it is
+                # Check if val is a numpy array and cast it to self.dtype if it is
                 if isinstance(val, np.ndarray):
                     val = val.astype(self.dtype)
-                
-                setattr(self, device_buff_name, cl_array.to_device(ocl_queue,  val))
+
+                setattr(self, device_buff_name, cl_array.to_device(ocl_queue, val))
 
     @property
     def cl_build_opts(self):
@@ -165,10 +162,7 @@ class AstroFVSolverCL(FVSolverCl):
         nc = self.mesh.nb_cells
 
         #  Moments values
-        cell_data = {
-            "w_{}".format(k): {self.mesh.cell_name: self.wn_h[k * nc : (k + 1) * nc]}
-            for k in self.export_idx
-        }
+        cell_data = {f"w_{k}": {self.mesh.cell_name: self.wn_h[k * nc : (k + 1) * nc]} for k in self.export_idx}
 
         # Copy buffers from device to host
         cl.enqueue_copy(ocl_queue, self.wn_h, self.wn_d.data).wait()
@@ -197,9 +191,7 @@ class AstroFVSolverCL(FVSolverCl):
 
         with meshio.xdmf.TimeSeriesWriter(self.export_data_file) as writer:
             # Export mesh
-            writer.write_points_cells(
-                self.mesh.points, [(self.mesh.cell_name, self.mesh.cells)]
-            )
+            writer.write_points_cells(self.mesh.points, [(self.mesh.cell_name, self.mesh.cells)])
 
             # Export solution at t=0
             self._export_data(ocl_queue, writer)
@@ -239,10 +231,7 @@ class AstroFVSolverCL(FVSolverCl):
                 self.t += self.time_data.dt
                 self.iter += 1
                 # Export solution
-                if (
-                    self.iter % self.export_frq == 0
-                    or self.iter == self.time_data.iter_max
-                ):
+                if self.iter % self.export_frq == 0 or self.iter == self.time_data.iter_max:
                     self._export_data(ocl_queue, writer)
 
                 # w0_tot.append(np.float64(cl_array.sum(self.wn_d[0:self.mesh.nb_cells]).get()))

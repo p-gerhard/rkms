@@ -80,10 +80,7 @@ class Model:
             if is_num_type(v) or isinstance(v, str):
                 res[k] = v
             else:
-                logger.error(
-                    "pair {}:{} cannot be inject, value type must be numeric or"
-                    "string".format(k, v)
-                )
+                logger.error(f"pair {k}:{v} cannot be inject, value type must be numeric orstring")
         self.__cl_replace_map = res
 
     @property
@@ -126,6 +123,6 @@ class Model:
         filtered_name = []
         dict = serialize(self, filtered_name)
         dict.update(extra_values)
-        dict["name"]= self.__class__.__name__
+        dict["name"] = self.__class__.__name__
 
         return dict

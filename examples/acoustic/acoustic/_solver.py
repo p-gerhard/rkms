@@ -1,13 +1,15 @@
 from __future__ import annotations
 
 import os
+
+import matplotlib.pyplot as plt
 import meshio
 import numpy as np
 import pyopencl as cl
 import pyopencl.array as cl_array
-from rkms.solver import FVSolverCl, FVTimeMode, get_progressbar
+
 from rkms.model import SN
-import matplotlib.pyplot as plt
+from rkms.solver import FVSolverCl, get_progressbar
 
 
 class AcousticFVSolverCL(FVSolverCl):
@@ -54,20 +56,15 @@ class AcousticFVSolverCL(FVSolverCl):
         nc = self.mesh.nb_cells
 
         # Base values
-        cell_data = {
-            "w_{}".format(k): {self.mesh.cell_name: self.wn_h[k * nc : (k + 1) * nc]}
-            for k in self.export_idx
-        }
+        cell_data = {f"w_{k}": {self.mesh.cell_name: self.wn_h[k * nc : (k + 1) * nc]} for k in self.export_idx}
 
         cl.enqueue_copy(ocl_queue, self.wn_h, self.wn_d.data).wait()
 
         if isinstance(self.model, SN):
             cell_data.update(
                 {
-                    "w_rec_{}".format(k): {
-                        self.mesh.cell_name: self.wn_rec_h[k * nc : (k + 1) * nc]
-                    }
-                    for k in range((self.mesh.dim + 1))
+                    f"w_rec_{k}": {self.mesh.cell_name: self.wn_rec_h[k * nc : (k + 1) * nc]}
+                    for k in range(self.mesh.dim + 1)
                 }
             )
 
@@ -85,9 +82,7 @@ class AcousticFVSolverCL(FVSolverCl):
 
         with meshio.xdmf.TimeSeriesWriter(self.export_data_file) as writer:
             # Export mesh
-            writer.write_points_cells(
-                self.mesh.points, [(self.mesh.cell_name, self.mesh.cells)]
-            )
+            writer.write_points_cells(self.mesh.points, [(self.mesh.cell_name, self.mesh.cells)])
 
             if isinstance(self.model, SN):
                 self.ocl_prg.sn_reconstruct_macro_field(
@@ -98,9 +93,7 @@ class AcousticFVSolverCL(FVSolverCl):
                     self.wn_rec_d.data,
                 ).wait()
                 w0_tot = [
-                    np.float64(
-                        cl_array.sum(self.wn_rec_d[0 : self.mesh.nb_cells]).get()
-                    ),
+                    np.float64(cl_array.sum(self.wn_rec_d[0 : self.mesh.nb_cells]).get()),
                 ]
 
             else:
@@ -143,24 +136,15 @@ class AcousticFVSolverCL(FVSolverCl):
                     ).wait()
 
                     w0_tot = [
-                        np.float64(
-                            cl_array.sum(self.wn_rec_d[0 : self.mesh.nb_cells]).get()
-                        ),
+                        np.float64(cl_array.sum(self.wn_rec_d[0 : self.mesh.nb_cells]).get()),
                     ]
                 else:
-                    w0_tot.append(
-                        np.float64(
-                            cl_array.sum(self.wn_d[0 : self.mesh.nb_cells]).get()
-                        )
-                    )
+                    w0_tot.append(np.float64(cl_array.sum(self.wn_d[0 : self.mesh.nb_cells]).get()))
 
                 times.append(self.t)
 
                 # Export solution
-                if (
-                    self.iter % self.export_frq == 0
-                    or self.iter == self.time_data.iter_max
-                ):
+                if self.iter % self.export_frq == 0 or self.iter == self.time_data.iter_max:
                     self._export_data(ocl_queue, writer)
 
                 get_progressbar(

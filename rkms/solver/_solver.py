@@ -50,7 +50,6 @@ def get_export_dir(dir=None):
 
 
 class SolverCl(ABC):
-
     @property
     @abstractmethod
     def cl_src_file(self) -> None:
@@ -97,7 +96,7 @@ class SolverCl(ABC):
         )
 
         # Read OpenCL main source file
-        with open(self.cl_src_file, "r") as f:
+        with open(self.cl_src_file) as f:
             src = f.read()
 
         # Inject values into the OpenCL source using replace_maps
@@ -110,11 +109,9 @@ class SolverCl(ABC):
 
         for key, val in self.cl_replace_map.items():
             val_fmt = (
-                f"({val:{fmt}}{suffix})"
-                if isinstance(val, np.float32) or isinstance(val, np.float64)
-                else f"({val})"
+                f"({val:{fmt}}{suffix})" if isinstance(val, np.float32) or isinstance(val, np.float64) else f"({val})"
             )
-            src = src.replace("{}".format(key), val_fmt)
+            src = src.replace(f"{key}", val_fmt)
 
         # Create OpenCL program
         self.ocl_prg = cl.Program(self.ctx, src)
@@ -144,7 +141,7 @@ class SolverCl(ABC):
         self.export_dir = get_export_dir()
         if not os.path.exists(self.export_dir):
             os.makedirs(self.export_dir)
-        
+
         # Dump simulation config data
         os.chdir(self.export_dir)
         with open("config.json", "w") as f:

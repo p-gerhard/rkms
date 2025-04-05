@@ -4,6 +4,7 @@ import logging
 
 import meshio
 import numpy as np
+
 from rkms.common import *
 
 from ._builder import MeshBuilder
@@ -174,9 +175,7 @@ class MeshStructured:
 
         # Reshape cells buffer to a two-dimensional array (used when export by
         # meshio) [[id_node, id_node, ...], ...,  [id_node, id_node, ...]]
-        self.cells = np.reshape(
-            self.cells, (self.nb_cells, self.elem_data["NODE_PER_ELEM"])
-        )
+        self.cells = np.reshape(self.cells, (self.nb_cells, self.elem_data["NODE_PER_ELEM"]))
 
     def _is_2d_mesh(self) -> bool:
         """
@@ -306,11 +305,7 @@ class MeshStructured:
         Returns:
             float: The volume of the mesh.
         """
-        return (
-            self.nb_cells * self.dx * self.dy
-            if self.dim == 2
-            else self.nb_cells * self.dx * self.dy * self.dz
-        )
+        return self.nb_cells * self.dx * self.dy if self.dim == 2 else self.nb_cells * self.dx * self.dy * self.dz
 
     def _get_boundary_surface(self):
         """
